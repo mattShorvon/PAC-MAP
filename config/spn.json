@@ -1,0 +1,72 @@
+{
+  "log-path": "log.log",
+  "random" : {
+    "seed" : 6
+  },
+  "actions": [
+    {
+      "load": {
+        "filename": "iris.spn",
+        "name": "SPN1"
+      }
+    },
+    {
+      "report": {
+        "spn": "SPN1",
+        "beam-size": 3,
+        "k": 3,
+        "repeats": 10
+      }
+    },
+    {
+      "map": {
+        "spn": "SPN1",
+        "algorithm": "naive"
+      }
+    },
+    {
+      "map": {
+        "spn": "SPN1",
+        "algorithm": "max-product"
+      }
+    },
+    {
+      "map": {
+        "spn": "SPN1",
+        "algorithm": "argmax-product"
+      }
+    },
+    {
+      "map": {
+        "spn": "SPN1",
+        "algorithm": "kbt",
+        "k": 3
+      }
+    },
+    {
+      "map": {
+        "spn": "SPN1",
+        "algorithm": "beam-search",
+        "beam-size": 3
+      }
+    },
+    {
+      "map": {
+        "spn": "SPN1",
+        "algorithm": "marginal-checking"
+      }
+    },
+    {
+      "map": {
+        "spn": "SPN1",
+        "algorithm": "forward-checking"
+      }
+    },
+    {
+      "map": {
+        "spn": "SPN1",
+        "algorithm": "branch-and-bound"
+      }
+    }
+  ]
+}
