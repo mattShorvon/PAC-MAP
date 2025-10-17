@@ -21,9 +21,11 @@ class Learn(Action):
             - Stores the learned SPN with the provided name along with the dataset"""
 
         logging.info("Executing Learn SPN action")
-        data = DB.get(self.params["dataset"])
+        data = PartitionedData(Path(self.params["dataset"]),
+                               self.params["learning-data-proportion"])
+        # data = DB.get(self.params["dataset"]) This line didn't seem to work, reverted to previous version of this line
         spn = gens(
-            data.scope, data.data, self.params["kclusters"], self.params["pval"], False
+            data.scope, data.training_data, self.params["kclusters"], self.params["pval"], False
         )
         spn.root = True
         print("SPN learned:", spn.vars(), "vars and", spn.arcs(), "arcs")

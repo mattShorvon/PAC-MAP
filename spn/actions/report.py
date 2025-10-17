@@ -26,7 +26,15 @@ class Report(Action):
         logging.info("Running MAP report on spn: %s", self.params["spn"])
         beam_sz = self.params["beam-size"]
         k = self.params["k"]
-        spn = DB.get(self.params["spn"])[0]
+
+        # The subscript in this line below was causing errors since the SumNode
+        # object isn't subscriptable. I think previously the data was stored in 
+        # a tuple with the data
+        # spn = DB.get(self.params["spn"])[0]
+
+        # This works:
+        spn = DB.get(self.params["spn"])
+        
         repeats = self.params["repeats"]
         algorithm_params = [
             ("Naive Map", naive, None),
