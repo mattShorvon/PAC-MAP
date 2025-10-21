@@ -2,7 +2,7 @@ from spn.node.base import SPN
 from spn.node.indicator import Indicator
 from spn.node.sum import SumNode
 from spn.node.product import ProductNode
-from typing import Callable, cast, Optional, Tuple, List
+from typing import Callable, cast, Optional, Tuple, List, Dict
 from spn.utils.evidence import Evidence
 from spn.structs import Variable
 from functools import reduce

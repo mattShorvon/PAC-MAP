@@ -13,8 +13,12 @@ from spn.node.product import ProductNode
 from spn.utils.graph import full_binarization
 from spn.structs import Variable
 from spn.utils.evidence import Evidence
+import os
 
-MERLIN_PATH = "/home/marcheing/langs/c++/merlin/bin/merlin"
+# To get this path to work (at least on mac), you need to download the merlin 
+# repo into Documents as merlin-master, and use its makefile to compile it. 
+# Might be ~/Documents/merlin-master/bin instead, whatever works
+MERLIN_PATH = os.path.expanduser("~/Documents/merlin-master/bin/merlin")
 
 
 def merlin(
@@ -59,8 +63,12 @@ def merlin(
         )
     except subprocess.TimeoutExpired:
         return str(timeout), 0.0, None, None
-    except subprocess.CalledProcessError:
-        return "{:.4f}".format(time.process_time() - starting_time), 0.0, None, None
+    except subprocess.CalledProcessError as e:
+        print(f"Merlin subprocess failed with return code {e.returncode}")
+        print(f"Command: {e.cmd}")
+        print(f"STDOUT: {e.stdout}")
+        print(f"STDERR: {e.stderr}")
+        raise
     splitted_info = process_info.stdout.strip().split("\n")
     for line in splitted_info:
         if line.startswith("[WMB] + induced width"):

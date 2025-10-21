@@ -15,7 +15,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/article_script.py",
             "console": "integratedTerminal",
-            "args": ["test_spn"],
+            "args": ["test_inputs"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         }

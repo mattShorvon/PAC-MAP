@@ -196,5 +196,13 @@ tags
 # log files
 *.log
 
-# spn files
+# model files
 *.spn
+*.uai
+*.json
+
+# evidence and query files
+*.evid
+*.query
+*.data
+/test_inputs
