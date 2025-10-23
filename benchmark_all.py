@@ -1,3 +1,7 @@
+# Similar to benchmark.py, but runs the benchmark on all dataset subfolders in
+# a given directory. You just need to input the name of the parent folder that
+# they are all in. 
+
 import os
 import sys
 from pathlib import Path
@@ -120,10 +124,6 @@ for dataset in datasets:
         m = [var for var in spn.scope() if var not in q and var not in e]
         mp_est, amp_est, ms_est, hbp_est = ["None"] * 4
         mp_prob, amp_prob, ms_prob, hbp_prob = [0] * 4
-        print("Evidence    :", e)
-        print("Query       :", ' '.join([f"{v.id}({v.n_categories})" for v in q ]))
-        print("Marginalized:", ' '.join([f"{v.id}({v.n_categories})" for v in m ]))
-        print()
         if "MP" in methods:
             mp_est, _ = max_product_with_evidence_and_marginals(
                 spn, e, m
@@ -138,9 +138,6 @@ for dataset in datasets:
                 "MAP Estimate": str({var.id: mp_est[var] for var in q}),
                 "MAP Probability": mp_prob,
             })
-            print(f"MP:           {mp_prob:.4e}")
-            print("MAP Est:", ' '.join([str(mp_est[v]) for v in q]))
-            print()
         if "AMP" in methods:
             amp_est, _ = argmax_product_with_evidence_and_marginalized(
                 spn, e, m
@@ -154,9 +151,6 @@ for dataset in datasets:
                 "MAP Estimate": str({var.id: amp_est[var] for var in q}),
                 "MAP Probability": amp_prob,
             })
-            print(f"AMP:           {amp_prob:.4e}")
-            print("MAP Est:", ' '.join([str(amp_est[v]) for v in q]))
-            print()
         if "MS" in methods:
             ms_est, _ = max_search(
                 spn,
@@ -174,13 +168,10 @@ for dataset in datasets:
                 "MAP Estimate": str({var.id: ms_est[var] for var in q}),
                 "MAP Probability": ms_prob,
             })
-            print(f"MS:           {ms_prob:.4e}")
-            print("MAP Est:", ' '.join([str(ms_est[v]) for v in q]))
-            print()
         if "HBP" in methods:
             spn_bin = full_binarization(spn)
-            spn_bin.fix_scope()
-            spn_bin.fix_topological_order()
+            spn.fix_scope()
+            spn.fix_topological_order()
             hbp_est = lbp(spn_bin, e, m, num_iterations=5)
             hbp_prob = spn_bin.value(hbp_est)
             results.append({
@@ -191,9 +182,6 @@ for dataset in datasets:
                 "MAP Estimate": str({var.id: hbp_est[var] for var in q}),
                 "MAP Probability": hbp_prob,
             })
-            print(f"HBP:           {hbp_prob:.4e}")
-            print("MAP Est:", ' '.join([str(hbp_est[v]) for v in q]))
-            print()
     results_dt = pd.DataFrame(results)
     if no_results_file is False:
         results_dt.to_csv(results_filename, index=False)

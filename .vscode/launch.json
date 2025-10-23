@@ -28,6 +28,16 @@
             "args": ["-d", "iris", "-m", "MP", "AMP", "MS", "HBP", "--no-learn"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
+        },
+        {
+            "name":"Python: benchmark.py with audiology",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/benchmark.py",
+            "console": "integratedTerminal",
+            "args": ["-d", "audiology", "-m", "MP", "AMP", "MS", "HBP", "--no-learn", "--data-path", "benchmark_datasets"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
         }
     ]
 }
