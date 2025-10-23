@@ -2,7 +2,7 @@ from spn.node.base import SPN
 from spn.node.indicator import Indicator
 from spn.node.sum import SumNode
 from spn.node.product import ProductNode
-from typing import Callable, cast, Optional, Tuple, List, Dict
+from typing import Callable, cast, Dict, Optional, Tuple, List
 from spn.utils.evidence import Evidence
 from spn.structs import Variable
 from functools import reduce
@@ -23,7 +23,7 @@ def product(vector:list) -> float:
 
 
 # Message passing algorithm
-def lbp(spn, evidence, marginalized=[], num_iterations=100, tolerance=1e-6):
+def lbp(spn, evidence, marginalized=[], num_iterations=30, tolerance=1e-6):
     " Implements Liu & Ihler 2011's max-sum-product belief propagation algorithm "
     sc = sorted(spn.scope())
     print(f"{len(sc)} variables: {len(sc)-len(evidence)-len(marginalized)} query, {len(evidence)} evidence, {len(marginalized)} marginalized.")
@@ -72,12 +72,11 @@ def lbp(spn, evidence, marginalized=[], num_iterations=100, tolerance=1e-6):
     print(f"SPN has {num_sum} sums, {num_prod} products and {num_leaves} leaves.\n")
     assert num_sum+num_prod+num_leaves == len(spn.topological_order()) 
     assert num_leaves == sum(v.n_categories for v in spn.scope())
-    print("iteration | value ")
+    print("iteration | variational bound ")
     for iteration in range(num_iterations):
         ### Downward propagation ##########################################################
         # compute message from root node v to child (indicator) node
         for (v,node) in pi_i:
-            # TODO handle evidence
             values = pi_i[(v,node)]
             if sc[v] in evidence: 
                 # print(sc[v])
@@ -117,7 +116,11 @@ def lbp(spn, evidence, marginalized=[], num_iterations=100, tolerance=1e-6):
                                 if bel[vid][j] == maxbel:
                                     pi0 += pi_i[(vid,node)][j]
                         pi0 *= product(1.0-ll[(opa,node)] for opa in parent[node] if opa != pa)
-                    pi[(node,pa)] = pi1/(pi1+pi0)  # normalization
+                    if pi1+pi0 > 0:
+                        pi[(node,pa)] = pi1/(pi1+pi0)  # normalization
+                    else:
+                        # NUMERICAL ERROR: fallback to uniform for now (should fix this!)
+                        pi[(node,pa)] = 0.5
                     #print("leaf", vid, node.assignment, pi[(node,pa)], pi1, pi0, pi_i[vid,node])
              elif node.type == "sum":
                  if not(node.root):
@@ -137,7 +140,7 @@ def lbp(spn, evidence, marginalized=[], num_iterations=100, tolerance=1e-6):
              if node.type == "sum":
                  node = cast(SumNode,node)
                  ch1,ch2 = node.children
-                 if spn.root: # root note receives indicator on value = 1 (to represent evidence on that node)
+                 if node.root: # root note receives indicator on value = 1 (to represent evidence on that node)
                      llp = 1.0
                  else:
                      assert len(parent[node]) == 1
@@ -153,7 +156,7 @@ def lbp(spn, evidence, marginalized=[], num_iterations=100, tolerance=1e-6):
                  ll[(node,ch2)] = ll1/(ll0+ll1)
              elif node.type == "product": 
                  ch1,ch2 = node.children
-                 if spn.root:
+                 if node.root:
                      llp = 1.0
                  else:
                      assert len(parent[node]) == 1
@@ -161,10 +164,17 @@ def lbp(spn, evidence, marginalized=[], num_iterations=100, tolerance=1e-6):
                      llp = ll[(pa,node)]
                  # left child
                  ll1 = (1.0-llp)*(1.0-pi[(ch2,node)]) + llp*pi[(ch2,node)]
-                 ll[(node,ch1)] = ll1/(ll1+1-llp)
+                 if ll1+(1-llp) > 0:
+                     ll[(node,ch1)] = ll1/(ll1+1-llp)
+                 else:
+                     ### NUMERICAL ERROR: FALLBACK TO UNIFORM (should fix this!)
+                     ll[(node,ch2)] = 0.5 
                  # right child
                  ll1 = (1.0-llp)*(1.0-pi[(ch1,node)]) + llp*pi[(ch1,node)]
-                 ll[(node,ch2)] = ll1/(ll1+1-llp)
+                 if ll1+1-llp > 0:
+                     ll[(node,ch2)] = ll1/(ll1+1-llp)
+                 else: ### NUMERICAL ERROR: FALLBACK TO UNIFORM (should fix this!)
+                     ll[(node,ch2)] = 0.5 
         # compute messages to root nodes
         for (n,v) in ll_i:
             llp1 = product(ll[(pa,n)] for pa in parent[n])
@@ -186,8 +196,13 @@ def lbp(spn, evidence, marginalized=[], num_iterations=100, tolerance=1e-6):
                     b = product(ll_i[(n,v.id)][j] for n in parent_i[v.id])
                     Z += b
                     bel[v.id][j] = b
-                for j in range(v.n_categories):
-                    bel[v.id][j] /= Z
+                if Z > 0:
+                    for j in range(v.n_categories):
+                        bel[v.id][j] /= Z
+                else: ## NUMERICAL ERROR: should fix this!
+                    for j in range(v.n_categories):
+                        bel[v.id][j] /= 1/v.n_categories
+
         #print(bel)
         # x = Evidence(dict((v,[argmax(bel[v.id])]) for v in sc))
         # print(x, spn.value(x))
@@ -268,7 +283,7 @@ if __name__ == "__main__":
     # Compute marginalized vars
     results = ""
     for i in range(len(evidences)):
-        print("### CASE", i, "##############################")
+        print("\033[7m### CASE", i, "###################################################\033[27m")
         e, q = evidences[i], queries[i]
         m = [v for v in sc if v not in e and v not in q]
         # sanity check
@@ -281,7 +296,7 @@ if __name__ == "__main__":
         if run_mp:
             x_mp = max_product_with_evidence_and_marginals(spn, e, m)[0]
             v_mp = spn.value(x_mp)
-            print(f"MP:           {v_mp:.4e}")
+            print(f"\033[92mMP:           {v_mp:.4e}\033[39m")
             print("Configuration:", ' '.join([str(x_mp[v]) for v in q]))
             print()
 
@@ -292,14 +307,16 @@ if __name__ == "__main__":
             print("Configuration:", ' '.join([str(x_ms[v]) for v in q]))
             print()
 
-        x_bp = lbp(spn, e, m, num_iterations=5)
-        v_bp = spn.value(x_bp)
-        print()
-        if run_mp:
-            print(f"BP:           {v_bp:.4e}    {v_bp/v_mp:.3f}")
-        else:
-            print(f"BP:           {v_bp:.4e}")
-        print("Configuration:", ' '.join([str(x_bp[v]) for v in q]))
+        try:
+            x_bp = lbp(spn, e, m, num_iterations=10)
+            v_bp = spn.value(x_bp)
+            if run_mp:
+                print(f"\033[92mBP:           {v_bp:.4e}    {v_bp/v_mp:.3f}\033[39m")
+            else:
+                print(f"BP:           {v_bp:.4e}")
+            print("Configuration:", ' '.join([str(x_bp[v]) for v in q]))
+        except:
+            print('\033[92mBP: \033[5m\033[91m      FAILED\033[25m\033[39m')
         print()
         # for node in bel:
         #     if node.root:
