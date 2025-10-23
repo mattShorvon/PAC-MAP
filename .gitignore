@@ -206,6 +206,7 @@ tags
 *.query
 *.data
 /test_inputs
+/benchmark_datasets
 
 # results files
 *.csv
