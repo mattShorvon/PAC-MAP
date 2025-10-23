@@ -20,11 +20,14 @@ import pandas as pd
 from datetime import datetime
 
 # Check command line arguments and initialise variables
+# USAGE: python benchmark.py -d <names of dataset folders separated by space 
+# e.g. iris nltcs> -m <names of MAP algos to run, separated by space> 
+# --no-learn --file-mode .map --data-path test --results-file results.csv
 parser = argparse.ArgumentParser(description='Benchmark SPN MAP algorithms')
 parser.add_argument('-d', '--datasets', nargs='+', required=True,
                     help='Dataset names separated by space (e.g., iris nltcs)')
 parser.add_argument('-m', '--methods', nargs='+', required=True,
-                    help='MAP algs to run, separated by space (e.g. MP AMP)')
+                    help='MAP algos to run, separated by space (e.g. MP AMP)')
 parser.add_argument('--learn', action='store_true',
                     help='Learn SPN from scratch')
 parser.add_argument('--no-learn', dest='learn', action='store_false',
