@@ -18,6 +18,16 @@
             "args": ["test_inputs"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
+        },
+        {
+            "name":"Python: benchmark.py with iris",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/benchmark.py",
+            "console": "integratedTerminal",
+            "args": ["-d", "iris", "-m", "MP", "AMP", "MS", "HBP", "--no-learn"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
         }
     ]
 }

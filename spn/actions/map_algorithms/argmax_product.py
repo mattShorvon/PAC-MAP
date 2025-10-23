@@ -68,7 +68,7 @@ def argmax_product_with_evidence_and_marginalized(
     spn = cast(Indicator, spn)
     if spn.variable in marginalized:
         return Evidence({spn.variable: list(range(spn.variable.n_categories))}), 1.0
-    if (spn.variable in evidence and spn.assignment in evidence[spn.variable]) or (
+    if (spn.variable in evidence and spn.assignment in evidence[spn.variable]) or ( 
         spn.variable not in evidence
     ):
         return Evidence({spn.variable: [spn.assignment]}), 1.0

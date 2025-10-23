@@ -206,3 +206,6 @@ tags
 *.query
 *.data
 /test_inputs
+
+# results files
+*.csv
