@@ -24,7 +24,14 @@ from datetime import datetime
 # e.g. iris nltcs> -m <names of MAP algos to run, separated by space> 
 # --no-learn --file-mode .map --data-path test --results-file results.csv
 parser = argparse.ArgumentParser(description='Benchmark SPN MAP algorithms')
-parser.add_argument('-d', '--datasets', nargs='+', required=True,
+parser.add_argument('-all','--all-datasets', action='store_true',
+                    help="Iterate through all dataset folders" \
+                    "(containing queries, evidences and spns) in the specified"\
+                    "data path, or just use specific ones?")
+parser.add_argument('-dp', '--data-path', default='test_inputs', 
+                    help='Path to folder with all subfolders of spns, ' \
+                    'queries and evidence in them')
+parser.add_argument('-d', '--datasets', nargs='+',
                     help='Dataset names separated by space (e.g., iris nltcs)')
 parser.add_argument('-m', '--methods', nargs='+', required=True,
                     help='MAP algos to run, separated by space (e.g. MP AMP)')
@@ -35,9 +42,6 @@ parser.add_argument('--no-learn', dest='learn', action='store_false',
 parser.add_argument('--file-mode', choices=['.map','.query/.evid'], 
                     default='.map',
                     help='Format of query/evidence files')
-parser.add_argument('--data-path', default='test_inputs', 
-                    help='Path to folder with all subfolders of spns, ' \
-                    'queries and evidence in them')
 parser.add_argument('--no-res-file', action="store_true",
                     help="No single file to write the results to, will write" \
                     "to many individual files in each dataset's subfolder instead")
@@ -47,12 +51,17 @@ parser.add_argument('--results-file', default='benchmark_results.csv',
 parser.set_defaults(learn=False)
 
 args = parser.parse_args()
-
-datasets = args.datasets
+use_all = args.all_datasets
+data_path = args.data_path
+if use_all:
+    datasets = sorted(
+        [folder.name for folder in os.scandir(data_path) if folder.is_dir()]
+    )
+else:
+    datasets = args.datasets
 methods = args.methods
 learn_spn = args.learn
 query_evid_filemode = args.file_mode
-data_path = args.data_path
 no_results_file = args.no_res_file
 results_filename = args.results_file
 
@@ -65,6 +74,7 @@ datetime_str = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 # Run the experiment
 for dataset in datasets:
     # Set up the SPN
+    print(f"Running benchmark on dataset {dataset}")
     if learn_spn:
         print("Learning SPN ...")
         kclusters = 10
@@ -124,6 +134,7 @@ for dataset in datasets:
         print("Query       :", ' '.join([f"{v.id}({v.n_categories})" for v in q ]))
         print("Marginalized:", ' '.join([f"{v.id}({v.n_categories})" for v in m ]))
         print()
+        run_success = True
         if "MP" in methods:
             mp_est, _ = max_product_with_evidence_and_marginals(
                 spn, e, m
@@ -178,24 +189,31 @@ for dataset in datasets:
             print("MAP Est:", ' '.join([str(ms_est[v]) for v in q]))
             print()
         if "HBP" in methods:
-            spn_bin = full_binarization(spn)
-            spn_bin.fix_scope()
-            spn_bin.fix_topological_order()
-            hbp_est = lbp(spn_bin, e, m, num_iterations=5)
-            hbp_prob = spn_bin.value(hbp_est)
-            results.append({
-                "Date": datetime_str,
-                "Dataset": dataset,
-                "Query": str([query.id for query in q]),
-                "Method": "Hybrid Belief-Propagation",
-                "MAP Estimate": str({var.id: hbp_est[var] for var in q}),
-                "MAP Probability": hbp_prob,
-            })
-            print(f"HBP:           {hbp_prob:.4e}")
-            print("MAP Est:", ' '.join([str(hbp_est[v]) for v in q]))
-            print()
-    results_dt = pd.DataFrame(results)
-    if no_results_file is False:
-        results_dt.to_csv(results_filename, index=False)
-    else:
-        results_dt.to_csv(f"{data_path}/{dataset}/{dataset}_results.csv", index=False)
+            try:
+                spn_bin = full_binarization(spn)
+                spn_bin.fix_scope()
+                spn_bin.fix_topological_order()
+                hbp_est = lbp(spn_bin, e, m, num_iterations=5)
+                hbp_prob = spn_bin.value(hbp_est)
+                results.append({
+                    "Date": datetime_str,
+                    "Dataset": dataset,
+                    "Query": str([query.id for query in q]),
+                    "Method": "Hybrid Belief-Propagation",
+                    "MAP Estimate": str({var.id: hbp_est[var] for var in q}),
+                    "MAP Probability": hbp_prob,
+                })
+                print(f"HBP:           {hbp_prob:.4e}")
+                print("MAP Est:", ' '.join([str(hbp_est[v]) for v in q]))
+                print()
+            except Exception as error:
+                print(f"HBP failed with error {error}")
+                print(f"Error type: {type(error).__name__}")
+                run_success = False
+                break 
+    if run_success:
+        results_dt = pd.DataFrame(results)
+        if no_results_file is False:
+            results_dt.to_csv(results_filename, index=False)
+        else:
+            results_dt.to_csv(f"{data_path}/{dataset}/{dataset}_results.csv", index=False)

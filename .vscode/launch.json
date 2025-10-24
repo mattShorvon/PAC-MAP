@@ -38,6 +38,16 @@
             "args": ["-d", "audiology", "-m", "MP", "AMP", "MS", "HBP", "--no-learn", "--data-path", "benchmark_datasets"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
+        },
+        {
+            "name":"Python: benchmark.py all datasets",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/benchmark.py",
+            "console": "integratedTerminal",
+            "args": ["-m", "MP", "AMP", "MS", "HBP", "--no-learn", "-all", "--data-path", "benchmark_datasets"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
         }
     ]
 }
