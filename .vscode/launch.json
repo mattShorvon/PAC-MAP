@@ -45,7 +45,17 @@
             "request": "launch",
             "program": "${workspaceFolder}/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-m", "MP", "AMP", "MS", "HBP", "--no-learn", "-all", "--data-path", "benchmark_datasets"],
+            "args": ["-m", "MP", "AMP", "MS", "HBP", "--no-learn", "-all", "--data-path", "20-datasets", "-q", "0.4", "-e", "0.4"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }, 
+        {
+            "name":"Python: make_queries&evids.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/make_queries&evids.py",
+            "console": "integratedTerminal",
+            "args": ["-dp", "20-datasets", "-d", "accidents"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         }

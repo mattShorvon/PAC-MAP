@@ -207,6 +207,7 @@ tags
 *.data
 /test_inputs
 /benchmark_datasets
+/20-datasets
 
 # results files
 *.csv

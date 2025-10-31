@@ -18,6 +18,7 @@ from spn.utils.evidence import Evidence
 import argparse
 import pandas as pd
 from datetime import datetime
+import time
 
 # Check command line arguments and initialise variables
 # USAGE: python benchmark.py -d <names of dataset folders separated by space 
@@ -33,6 +34,10 @@ parser.add_argument('-dp', '--data-path', default='test_inputs',
                     'queries and evidence in them')
 parser.add_argument('-d', '--datasets', nargs='+',
                     help='Dataset names separated by space (e.g., iris nltcs)')
+parser.add_argument('-q', '--q-percent', type=float, 
+                    help="Proportion of query variables")
+parser.add_argument('-e', '--e-percent', type=float,
+                    help="Proportion of evidence variables")
 parser.add_argument('-m', '--methods', nargs='+', required=True,
                     help='MAP algos to run, separated by space (e.g. MP AMP)')
 parser.add_argument('--learn', action='store_true',
@@ -48,6 +53,7 @@ parser.add_argument('--no-res-file', action="store_true",
 parser.add_argument('--results-file', default='benchmark_results.csv',
                     help='Path to file to store results in, if storing in ' \
                     'a single results file')
+
 parser.set_defaults(learn=False)
 
 args = parser.parse_args()
@@ -59,6 +65,9 @@ if use_all:
     )
 else:
     datasets = args.datasets
+if args.q_percent and args.e_percent:
+    q_percent = args.q_percent
+    e_percent = args.e_percent
 methods = args.methods
 learn_spn = args.learn
 query_evid_filemode = args.file_mode
@@ -79,15 +88,34 @@ for dataset in datasets:
         print("Learning SPN ...")
         kclusters = 10
         pval = 0.1
-        data = PartitionedData(
-            Path(f"{data_path}/{dataset}/{dataset}-train.data", 1.0)
-        )
+        try:
+            # Try the first pattern
+            data = PartitionedData(
+                Path(f"{data_path}/{dataset}/{dataset}-train.data"), 1.0
+            )
+        except:
+            # If that fails, try the second pattern
+            try:
+                data = PartitionedData(
+                    Path(f"{data_path}/{dataset}/{dataset}.train.data"), 1.0
+                )
+            except Exception as error:
+                print(f"Failed to load training data: {error}")
+                print(f"Error type: {type(error).__name__}")
+                run_success = False
+                continue 
+            
         spn = gens(data.scope, data.training_data, kclusters, pval)
         spn.root = True
         print("SPN learned:", spn.vars(), "vars and", spn.arcs(), "arcs")
     else:
-        spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
-        print(f"SPN loaded: {spn.vars()} vars and {spn.arcs()} arcs")
+        try:
+            spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
+            print(f"SPN loaded: {spn.vars()} vars and {spn.arcs()} arcs")
+        except FileNotFoundError as error:
+            print(".spn file doesn't exist in this subfolder")
+            print(error)
+            continue
 
     # Set up the evidences and queries
     queries, evidences = [], []
@@ -108,21 +136,43 @@ for dataset in datasets:
                     index += 2
                 evidences.append(evidence)
     elif query_evid_filemode == ".map":
-        with open(f"{data_path}/{dataset}/{dataset}.map") as f:
-            for line_no, line in enumerate(f):
-                if line_no % 2 == 0: 
-                    query = [spn.scope()[int(var_id)] for var_id in line.split()[1:]]
-                    queries.append(query)
-                else: 
-                    evid_info = line.split()[1:]
-                    index = 0
-                    evidence = Evidence()
-                    while index < len(evid_info):
-                        var_id = int(evid_info[index])
-                        val = int(evid_info[index + 1])
-                        evidence[spn.scope()[var_id]] = [val]
-                        index += 2
-                    evidences.append(evidence)
+        # If the proportion of query and evidence variables has been specified
+        # for this experiment, load the files with them in the name
+        if q_percent and e_percent:
+            with open(
+                f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map"
+                ) as f:
+                for line_no, line in enumerate(f):
+                    if line_no % 2 == 0: 
+                        query = [spn.scope()[int(var_id)] for var_id in line.split()]
+                        queries.append(query)
+                    else: 
+                        evid_info = line.split()
+                        index = 0
+                        evidence = Evidence()
+                        while index < len(evid_info):
+                            var_id = int(evid_info[index])
+                            val = int(evid_info[index + 1])
+                            evidence[spn.scope()[var_id]] = [val]
+                            index += 2
+                        evidences.append(evidence)
+        # Otherwise, load the original .map files
+        else:
+            with open(f"{data_path}/{dataset}/{dataset}.map") as f:
+                for line_no, line in enumerate(f):
+                    if line_no % 2 == 0: 
+                        query = [spn.scope()[int(var_id)] for var_id in line.split()[1:]]
+                        queries.append(query)
+                    else: 
+                        evid_info = line.split()[1:]
+                        index = 0
+                        evidence = Evidence()
+                        while index < len(evid_info):
+                            var_id = int(evid_info[index])
+                            val = int(evid_info[index + 1])
+                            evidence[spn.scope()[var_id]] = [val]
+                            index += 2
+                        evidences.append(evidence)
     
     # Loop through each evidence and query combo
     results = []
@@ -136,10 +186,12 @@ for dataset in datasets:
         print()
         run_success = True
         if "MP" in methods:
+            start = time.perf_counter()
             mp_est, _ = max_product_with_evidence_and_marginals(
                 spn, e, m
             )
             mp_prob = spn.value(mp_est)
+            mp_time = time.perf_counter() - start
             
             results.append({
                 "Date": datetime_str,
@@ -148,15 +200,18 @@ for dataset in datasets:
                 "Method": "Max Product",
                 "MAP Estimate": str({var.id: mp_est[var] for var in q}),
                 "MAP Probability": mp_prob,
+                "Runtime": mp_time
             })
             print(f"MP:           {mp_prob:.4e}")
             print("MAP Est:", ' '.join([str(mp_est[v]) for v in q]))
             print()
         if "AMP" in methods:
+            start = time.perf_counter()
             amp_est, _ = argmax_product_with_evidence_and_marginalized(
                 spn, e, m
             )
             amp_prob = spn.value(amp_est)
+            amp_time = time.perf_counter() - start
             results.append({
                 "Date": datetime_str,
                 "Dataset": dataset,
@@ -164,37 +219,47 @@ for dataset in datasets:
                 "Method": "ArgMax Product",
                 "MAP Estimate": str({var.id: amp_est[var] for var in q}),
                 "MAP Probability": amp_prob,
+                "Runtime": amp_time
             })
             print(f"AMP:           {amp_prob:.4e}")
             print("MAP Est:", ' '.join([str(amp_est[v]) for v in q]))
             print()
         if "MS" in methods:
-            ms_est, _ = max_search(
-                spn,
-                forward_checking,
-                time_limit=600,
-                marginalized_variables=m,
-                evidence=e,
-            )
-            ms_prob = spn.value(ms_est)
-            results.append({
-                "Date": datetime_str,
-                "Dataset": dataset,
-                "Query": str([query.id for query in q]),
-                "Method": "Max Search",
-                "MAP Estimate": str({var.id: ms_est[var] for var in q}),
-                "MAP Probability": ms_prob,
-            })
-            print(f"MS:           {ms_prob:.4e}")
-            print("MAP Est:", ' '.join([str(ms_est[v]) for v in q]))
-            print()
+            try:
+                start = time.perf_counter()
+                ms_est, _ = max_search(
+                    spn,
+                    forward_checking,
+                    time_limit=60, # just giving it 1 minute for this run-through, don't care that much about MS's results anyway
+                    marginalized_variables=m,
+                    evidence=e,
+                )
+                ms_prob = spn.value(ms_est)
+                ms_time = time.perf_counter() - start
+                results.append({
+                    "Date": datetime_str,
+                    "Dataset": dataset,
+                    "Query": str([query.id for query in q]),
+                    "Method": "Max Search",
+                    "MAP Estimate": str({var.id: ms_est[var] for var in q}),
+                    "MAP Probability": ms_prob,
+                    "Runtime": ms_time
+                })
+                print(f"MS:           {ms_prob:.4e}")
+                print("MAP Est:", ' '.join([str(ms_est[v]) for v in q]))
+                print()
+            except TimeoutError as error:
+                print("MS timed out")
+                print(error)
         if "HBP" in methods:
             try:
                 spn_bin = full_binarization(spn)
                 spn_bin.fix_scope()
                 spn_bin.fix_topological_order()
+                start = time.perf_counter()
                 hbp_est = lbp(spn_bin, e, m, num_iterations=5)
                 hbp_prob = spn_bin.value(hbp_est)
+                hbp_time = time.perf_counter() - start
                 results.append({
                     "Date": datetime_str,
                     "Dataset": dataset,
@@ -202,6 +267,7 @@ for dataset in datasets:
                     "Method": "Hybrid Belief-Propagation",
                     "MAP Estimate": str({var.id: hbp_est[var] for var in q}),
                     "MAP Probability": hbp_prob,
+                    "Runtime": hbp_time
                 })
                 print(f"HBP:           {hbp_prob:.4e}")
                 print("MAP Est:", ' '.join([str(hbp_est[v]) for v in q]))
@@ -214,6 +280,7 @@ for dataset in datasets:
     if run_success:
         results_dt = pd.DataFrame(results)
         if no_results_file is False:
-            results_dt.to_csv(results_filename, index=False)
+            file_exists = os.path.isfile(results_filename)
+            results_dt.to_csv(results_filename, mode='a', header=not file_exists, index=False)
         else:
             results_dt.to_csv(f"{data_path}/{dataset}/{dataset}_results.csv", index=False)

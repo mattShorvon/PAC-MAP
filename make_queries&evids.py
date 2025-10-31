@@ -1,0 +1,94 @@
+import pandas as pd
+import numpy as np
+import argparse
+import os
+import sys
+from pathlib import Path
+import random
+
+# Check command line args and initialise variables
+parser = argparse.ArgumentParser(description='Make .map files of queries and ' \
+'evidences')
+parser.add_argument('-all','--all-datasets', action='store_true',
+                    help="Iterate through all dataset subfolders" \
+                    "(containing queries, evidences and spns) in the specified"\
+                    "data path, or just use specific ones?")
+parser.add_argument('-dp', '--data-path', default='benchmark_datasets', 
+                    help='Path to folder with all subfolders of spns, ' \
+                    'queries and evidence in them')
+parser.add_argument('-d', '--datasets', nargs='+',
+                    help='Dataset names separated by space (e.g., iris nltcs)')
+parser.add_argument('-n', '--num-queries', default=10,
+                    help="Number of query and evidence pairs to create")
+parser.add_argument('-q', '--q-percent', type=float, default=0.3, 
+                    help="Proportion of query variables")
+parser.add_argument('-e', '--e-percent', type=float, default=0.3,
+                    help="Proportion of evidence variables")
+
+args = parser.parse_args()
+use_all = args.all_datasets
+data_path = args.data_path
+if use_all:
+    datasets = sorted(
+        [folder.name for folder in os.scandir(data_path) if folder.is_dir()]
+    )
+else:
+    datasets = args.datasets
+num_queries = args.num_queries
+q_percent = args.q_percent
+e_percent = args.e_percent
+
+print(f"Datasets: {datasets}")
+
+for dataset in datasets:
+    # Training data files come in two different naming formats, so we have to
+    # try both
+    try:
+        with open(f"{data_path}/{dataset}/{dataset}-train.data") as f:
+            for line in f:
+                line = line.split()
+                if line[0] == 'var':
+                    continue
+                else:
+                    line = line[0].split(',')
+                    num_features = len(line)
+                    break
+    except:
+        try:
+            with open(f"{data_path}/{dataset}/{dataset}.train.data") as f:
+                for line in f:
+                    line = line.split()
+                    if line[0] == 'var':
+                        continue
+                    else:
+                        num_features = len(line)
+                        break
+        except Exception as error:
+            print(f"Failed to load training data: {error}")
+            print(f"Error type: {type(error).__name__}")
+            continue
+    print(f"Number of features: {num_features}")
+    lines = []
+    for i in range(num_queries):
+        num_q_vars = np.floor(num_features * q_percent)
+        num_e_vars = np.floor(num_features * e_percent)
+        q_var_ids = random.sample(range(num_features), int(num_q_vars))
+        remaining = [i for i in range(num_features) if i not in q_var_ids]
+        e_var_ids = random.sample(remaining, min(int(num_e_vars), len(remaining)))
+        e_values = random.choices([0, 1], k=len(e_var_ids))
+        e_line = ' '.join(
+            [f"{var_id} {val}" for var_id, val in zip(e_var_ids, e_values)]
+        )
+        q_line = ' '.join(map(str, q_var_ids))
+        lines.append(q_line)
+        lines.append(e_line)
+
+    # Write to .map file
+    with open(
+        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map", 'w'
+        ) as f:
+        for line in lines:
+            f.write(line + '\n')
+    
+    print(f"Created {dataset}.map with {num_queries} query/evidence pairs") 
+
