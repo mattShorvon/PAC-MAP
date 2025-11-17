@@ -26,7 +26,7 @@ import time
 # --no-learn --file-mode .map --data-path test --results-file results.csv
 # EXAMPLE: python benchmark.py -m MP AMP MS --no-learn --data-path 20-datasets 
 # -d tmovie tretail voting -q 0.4 -e 0.4
-parser = argparse.ArgumentParser(description='Benchmark SPN MAP algorithms')
+parser = argparse.ArgumentParser(description='MAP Benchmark Experiment Params')
 parser.add_argument('-all','--all-datasets', action='store_true',
                     help="Iterate through all dataset folders" \
                     "(containing queries, evidences and spns) in the specified"\
@@ -55,6 +55,9 @@ parser.add_argument('--no-res-file', action="store_true",
 parser.add_argument('--results-file', default='benchmark_results.csv',
                     help='Path to file to store results in, if storing in ' \
                     'a single results file')
+parser.add_argument('-dt', '--date', required=True,
+                    default=datetime.now().strftime("%Y-%m-%d %H-%M-%S"),
+                    help='Date and time of experiment')
 
 parser.set_defaults(learn=False)
 
@@ -75,12 +78,11 @@ learn_spn = args.learn
 query_evid_filemode = args.file_mode
 no_results_file = args.no_res_file
 results_filename = args.results_file
+datetime_str = args.date
 
 print(f"Datasets: {datasets}")
 print(f"MAP methods being run: {methods}")
 print(f"Learning SPN from scatch: {learn_spn}")
-
-datetime_str = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
 # Run the experiment
 for dataset in datasets:
@@ -281,6 +283,9 @@ for dataset in datasets:
                 break 
     if run_success:
         results_dt = pd.DataFrame(results)
+        if q_percent and e_percent:
+            results_dt['Query Proportion'] = q_percent
+            results_dt['Evid Proportion'] = e_percent
         if no_results_file is False:
             file_exists = os.path.isfile(results_filename)
             results_dt.to_csv(results_filename, mode='a', header=not file_exists, index=False)

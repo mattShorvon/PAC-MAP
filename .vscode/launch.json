@@ -68,6 +68,16 @@
             "args": ["test_inputs/iris/iris.spn"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
+        },
+                {
+            "name":"Python: plot_results.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/plot_results.py",
+            "console": "integratedTerminal",
+            "args": ["-q", "0.1", "-e", "0.1", "-dn", "small_datasets", "-dt", "2025-11-05 20-02-33"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
         }
     ]
 }
