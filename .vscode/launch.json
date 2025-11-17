@@ -58,6 +58,16 @@
             "args": ["-dp", "20-datasets", "-d", "accidents"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
+        },
+        {
+            "name":"Python: spn_to_json.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/spn_to_json.py",
+            "console": "integratedTerminal",
+            "args": ["test_inputs/iris/iris.spn"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
         }
     ]
 }

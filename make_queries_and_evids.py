@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 import random
 
+# EXAMPLE: python make_queries_and_evids.py -dp benchmark_datasets -all -q 0.4 -e 0.4
 # Check command line args and initialise variables
 parser = argparse.ArgumentParser(description='Make .map files of queries and ' \
 'evidences')

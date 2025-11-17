@@ -24,6 +24,8 @@ import time
 # USAGE: python benchmark.py -d <names of dataset folders separated by space 
 # e.g. iris nltcs> -m <names of MAP algos to run, separated by space> 
 # --no-learn --file-mode .map --data-path test --results-file results.csv
+# EXAMPLE: python benchmark.py -m MP AMP MS --no-learn --data-path 20-datasets 
+# -d tmovie tretail voting -q 0.4 -e 0.4
 parser = argparse.ArgumentParser(description='Benchmark SPN MAP algorithms')
 parser.add_argument('-all','--all-datasets', action='store_true',
                     help="Iterate through all dataset folders" \

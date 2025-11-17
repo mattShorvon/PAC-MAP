@@ -206,8 +206,9 @@ tags
 *.query
 *.data
 /test_inputs
-/benchmark_datasets
+/small_datasets
 /20-datasets
 
 # results files
 *.csv
+*.xls
