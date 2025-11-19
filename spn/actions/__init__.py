@@ -13,3 +13,4 @@ import spn.actions.map
 import spn.actions.mis
 import spn.actions.partition
 import spn.actions.report
+import spn.actions.sample
