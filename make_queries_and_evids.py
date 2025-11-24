@@ -73,6 +73,10 @@ for dataset in datasets:
     for i in range(num_queries):
         num_q_vars = np.floor(num_features * q_percent)
         num_e_vars = np.floor(num_features * e_percent)
+        if num_q_vars == 0.0:
+            num_q_vars = 1
+        if num_e_vars == 0.0:
+            num_e_vars = 1
         q_var_ids = random.sample(range(num_features), int(num_q_vars))
         remaining = [i for i in range(num_features) if i not in q_var_ids]
         e_var_ids = random.sample(remaining, min(int(num_e_vars), len(remaining)))

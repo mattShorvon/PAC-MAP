@@ -50,6 +50,9 @@ results_wide['Winner'] = results_wide.apply(find_winners, axis=1)
 
 # Count the number of times each method was a winner
 winner_counts = results_wide['Winner'].explode().value_counts()
+for method in results['Method'].unique(): 
+    if method not in winner_counts:
+        winner_counts[method] = 0
 
 # Combine mean and std into single strings
 for method in results['Method'].unique():
@@ -85,6 +88,9 @@ runtime_results_wide['Winner'] = runtime_results_wide.apply(
     find_runtime_winners, axis=1
 )
 winners_runtime = runtime_results_wide['Winner'].explode().value_counts()
+for method in results['Method'].unique(): 
+    if method not in winners_runtime:
+        winners_runtime[method] = 0
 
 for method in runtime_results['Method'].unique():
     runtime_results_wide[method] = (
@@ -120,3 +126,15 @@ winner_summary.to_csv(
     f'results/{dataset_name}_summary_{q_percent}q{e_percent}e_{datetime_str}.csv',
     index=False
 )
+
+# Table to send to David, comment out if running pipeline
+
+# all_results.drop(
+#     columns = ['Date', 'Query Proportion', 'Evid Proportion', 'MAP Estimate'], 
+#     inplace = True
+# )
+# all_results['Query_Index'] = all_results.groupby(
+#     ['Dataset', 'Method']).cumcount() + 1
+# all_results = all_results.reset_index()
+# all_results.drop(columns=['index', 'Query'], inplace=True)
+# all_results.to_csv('results/small_datasets_results_for_david.csv', index=False)

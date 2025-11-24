@@ -42,6 +42,8 @@ class Indicator(SPN):
 
     def value(self, evidence: Evidence) -> float:
         # return 1.0 if self.__assignment in evidence[self.__variable] else 0.0 # causes typeerror: argument of type 'int' is not iterable
+        if self.variable not in evidence: 
+            return 1.0
         return 1.0 if self.assignment in evidence[self.variable] else 0.0
 
     def eval_r(self, evidence: Evidence, nodes_and_values: Dict[SPN, float]):

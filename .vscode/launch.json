@@ -30,12 +30,12 @@
             "justMyCode": true
         },
         {
-            "name":"Python: benchmark.py with audiology",
+            "name":"Python: benchmark.py with car",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "audiology", "-m", "MP", "AMP", "MS", "HBP", "--no-learn", "--data-path", "benchmark_datasets"],
+            "args": ["-d", "car", "-m", "MP", "AMP", "MS", "PACMAP", "--no-learn", "--data-path", "small_datasets", "-q", "0.1", "-e", "0.4"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
@@ -50,12 +50,12 @@
             "justMyCode": true
         }, 
         {
-            "name":"Python: make_queries&evids.py",
+            "name":"Python: make_queries_and_evids.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/make_queries&evids.py",
+            "program": "${workspaceFolder}/make_queries_and_evids.py",
             "console": "integratedTerminal",
-            "args": ["-dp", "20-datasets", "-d", "accidents"],
+            "args": ["-dp", "small_datasets", "-d", "car", "-q", "0.1", "-e", "0.1"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
@@ -75,7 +75,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/plot_results.py",
             "console": "integratedTerminal",
-            "args": ["-q", "0.1", "-e", "0.1", "-dn", "small_datasets", "-dt", "2025-11-05 20-02-33"],
+            "args": ["-q", "0.1", "-e", "0.1", "-dn", "small_datasets", "-dt", "21-11-2025 17:27:08"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         }

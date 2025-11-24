@@ -39,4 +39,6 @@ def ll_from_data(spn: SPN, evidences: List[Evidence]) -> float:
     results = Parallel(n_jobs=10)(
         delayed(spn.log_value)(evidence) for evidence in evidences
     )
-    return math.fsum(results)
+    # return math.fsum(results) 
+    return results # originally this returned the sum of results, 
+                   # but we want the results themselves

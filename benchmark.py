@@ -12,6 +12,7 @@ from spn.actions.map_algorithms.argmax_product import (
     argmax_product_with_evidence_and_marginalized,
 )
 from spn.actions.map_algorithms.max_search import max_search, forward_checking
+from spn.actions.map_algorithms.pac_map import pac_map
 from lbp import lbp
 from spn.utils.graph import full_binarization
 from spn.utils.evidence import Evidence
@@ -36,7 +37,7 @@ parser.add_argument('-dp', '--data-path', default='test_inputs',
                     'queries and evidence in them')
 parser.add_argument('-d', '--datasets', nargs='+',
                     help='Dataset names separated by space (e.g., iris nltcs)')
-parser.add_argument('-q', '--q-percent', type=float, 
+parser.add_argument('-q', '--q-percent', type=float,
                     help="Proportion of query variables")
 parser.add_argument('-e', '--e-percent', type=float,
                     help="Proportion of evidence variables")
@@ -55,7 +56,7 @@ parser.add_argument('--no-res-file', action="store_true",
 parser.add_argument('--results-file', default='benchmark_results.csv',
                     help='Path to file to store results in, if storing in ' \
                     'a single results file')
-parser.add_argument('-dt', '--date', required=True,
+parser.add_argument('-dt', '--date',
                     default=datetime.now().strftime("%Y-%m-%d %H-%M-%S"),
                     help='Date and time of experiment')
 
@@ -73,6 +74,8 @@ else:
 if args.q_percent and args.e_percent:
     q_percent = args.q_percent
     e_percent = args.e_percent
+else: 
+    q_percent, e_percent = None, None
 methods = args.methods
 learn_spn = args.learn
 query_evid_filemode = args.file_mode
@@ -160,7 +163,8 @@ for dataset in datasets:
                             evidence[spn.scope()[var_id]] = [val]
                             index += 2
                         evidences.append(evidence)
-        # Otherwise, load the original .map files
+        # Otherwise, load the original .map files that didn't have them in the
+        # names
         else:
             with open(f"{data_path}/{dataset}/{dataset}.map") as f:
                 for line_no, line in enumerate(f):
@@ -191,9 +195,11 @@ for dataset in datasets:
         run_success = True
         if "MP" in methods:
             start = time.perf_counter()
-            mp_est, _ = max_product_with_evidence_and_marginals(
+            mp_est_full, _ = max_product_with_evidence_and_marginals(
                 spn, e, m
             )
+            mp_est = Evidence({var: vals for var, vals in mp_est_full.items() 
+                if var not in m})
             mp_prob = spn.value(mp_est)
             mp_time = time.perf_counter() - start
             
@@ -261,7 +267,9 @@ for dataset in datasets:
                 spn_bin.fix_scope()
                 spn_bin.fix_topological_order()
                 start = time.perf_counter()
-                hbp_est = lbp(spn_bin, e, m, num_iterations=5)
+                hbp_est_full = lbp(spn_bin, e, m, num_iterations=5)
+                hbp_est = Evidence({var: vals for var, vals in hbp_est_full.items() 
+                                if var not in m})
                 hbp_prob = spn_bin.value(hbp_est)
                 hbp_time = time.perf_counter() - start
                 results.append({
@@ -281,6 +289,25 @@ for dataset in datasets:
                 print(f"Error type: {type(error).__name__}")
                 run_success = False
                 break 
+        if "PACMAP" in methods:
+            start = time.perf_counter()
+            pac_map_est, pac_map_prob = pac_map(
+                spn, e, m
+            )
+            # pac_map_prob = spn.value(pac_map_est)
+            pac_map_time = time.perf_counter() - start
+            results.append({
+                "Date": datetime_str,
+                "Dataset": dataset,
+                "Query": str([query.id for query in q]),
+                "Method": "PAC_MAP",
+                "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
+                "MAP Probability": pac_map_prob,
+                "Runtime": pac_map_time
+            })
+            print(f"PAC MAP:           {pac_map_prob:.4e}")
+            print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
+            print()
     if run_success:
         results_dt = pd.DataFrame(results)
         if q_percent and e_percent:
