@@ -188,6 +188,7 @@ for dataset in datasets:
         m = [var for var in spn.scope() if var not in q and var not in e]
         mp_est, amp_est, ms_est, hbp_est = ["None"] * 4
         mp_prob, amp_prob, ms_prob, hbp_prob = [0] * 4
+        p_evid = spn.value(e)
         print("Evidence    :", e)
         print("Query       :", ' '.join([f"{v.id}({v.n_categories})" for v in q ]))
         print("Marginalized:", ' '.join([f"{v.id}({v.n_categories})" for v in m ]))
@@ -200,7 +201,7 @@ for dataset in datasets:
             )
             mp_est = Evidence({var: vals for var, vals in mp_est_full.items() 
                 if var not in m})
-            mp_prob = spn.value(mp_est)
+            mp_prob = spn.value(mp_est) / p_evid
             mp_time = time.perf_counter() - start
             
             results.append({
@@ -212,7 +213,7 @@ for dataset in datasets:
                 "MAP Probability": mp_prob,
                 "Runtime": mp_time
             })
-            print(f"MP:           {mp_prob:.4e}")
+            print(f"MP:           {mp_prob:.4g}")
             print("MAP Est:", ' '.join([str(mp_est[v]) for v in q]))
             print()
         if "AMP" in methods:
@@ -220,7 +221,9 @@ for dataset in datasets:
             amp_est, _ = argmax_product_with_evidence_and_marginalized(
                 spn, e, m
             )
-            amp_prob = spn.value(amp_est)
+            filtered_sample = Evidence({var: vals for var, vals in amp_est.items() 
+                                            if var not in m})
+            amp_prob = spn.value(amp_est) / p_evid
             amp_time = time.perf_counter() - start
             results.append({
                 "Date": datetime_str,
@@ -231,7 +234,7 @@ for dataset in datasets:
                 "MAP Probability": amp_prob,
                 "Runtime": amp_time
             })
-            print(f"AMP:           {amp_prob:.4e}")
+            print(f"AMP:           {amp_prob:.4g}")
             print("MAP Est:", ' '.join([str(amp_est[v]) for v in q]))
             print()
         if "MS" in methods:
@@ -244,7 +247,7 @@ for dataset in datasets:
                     marginalized_variables=m,
                     evidence=e,
                 )
-                ms_prob = spn.value(ms_est)
+                ms_prob = spn.value(ms_est) / p_evid
                 ms_time = time.perf_counter() - start
                 results.append({
                     "Date": datetime_str,
@@ -255,7 +258,7 @@ for dataset in datasets:
                     "MAP Probability": ms_prob,
                     "Runtime": ms_time
                 })
-                print(f"MS:           {ms_prob:.4e}")
+                print(f"MS:           {ms_prob:.4g}")
                 print("MAP Est:", ' '.join([str(ms_est[v]) for v in q]))
                 print()
             except TimeoutError as error:
@@ -270,7 +273,7 @@ for dataset in datasets:
                 hbp_est_full = lbp(spn_bin, e, m, num_iterations=5)
                 hbp_est = Evidence({var: vals for var, vals in hbp_est_full.items() 
                                 if var not in m})
-                hbp_prob = spn_bin.value(hbp_est)
+                hbp_prob = spn_bin.value(hbp_est) / p_evid
                 hbp_time = time.perf_counter() - start
                 results.append({
                     "Date": datetime_str,
@@ -281,7 +284,7 @@ for dataset in datasets:
                     "MAP Probability": hbp_prob,
                     "Runtime": hbp_time
                 })
-                print(f"HBP:           {hbp_prob:.4e}")
+                print(f"HBP:           {hbp_prob:.4g}")
                 print("MAP Est:", ' '.join([str(hbp_est[v]) for v in q]))
                 print()
             except Exception as error:
@@ -305,7 +308,7 @@ for dataset in datasets:
                 "MAP Probability": pac_map_prob,
                 "Runtime": pac_map_time
             })
-            print(f"PAC MAP:           {pac_map_prob:.4e}")
+            print(f"PAC MAP:           {pac_map_prob:.4g}")
             print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
             print()
     if run_success:
