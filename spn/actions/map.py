@@ -1,7 +1,7 @@
 """Functions for MAP algorithms"""
 
 import logging
-from database import DB
+from maua_et_al_experiments.database import DB
 from spn.actions.map_algorithms.naive import naive
 from spn.actions.map_algorithms.argmax_product import do_argmax_product
 from spn.actions.map_algorithms.max_product import do_max_product

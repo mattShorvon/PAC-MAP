@@ -1,7 +1,7 @@
 """MIS: Create an SPN from an instance of the MIS problem"""
 
 import logging
-from database import DB
+from maua_et_al_experiments.database import DB
 from spn.actions.base import Action
 from spn.graph.mis import MIS as MISInstance
 

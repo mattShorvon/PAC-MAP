@@ -3,7 +3,7 @@
 from typing import List
 import logging
 import math
-from database import DB
+from maua_et_al_experiments.database import DB
 from spn.actions.base import Action
 from spn.utils.evidence import Evidence
 from spn.node.base import SPN

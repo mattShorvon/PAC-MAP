@@ -2,7 +2,7 @@
 
 import logging
 import numpy
-from database import DB
+from maua_et_al_experiments.database import DB
 from spn.data.partitioned_data import PartitionedData
 from spn.node.base import SPN
 from spn.actions.base import Action

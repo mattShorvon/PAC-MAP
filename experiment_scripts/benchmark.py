@@ -13,7 +13,7 @@ from spn.actions.map_algorithms.argmax_product import (
 )
 from spn.actions.map_algorithms.max_search import max_search, forward_checking
 from spn.actions.map_algorithms.pac_map import pac_map
-from lbp import lbp
+from experiment_scripts.lbp import lbp
 from spn.utils.graph import full_binarization
 from spn.utils.evidence import Evidence
 import argparse

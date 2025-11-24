@@ -18,7 +18,7 @@ from spn.actions.map_algorithms.local_search import *
 from spn.actions.map_algorithms.argmax_product import *
 from spn.actions.map_algorithms.max_search import *
 from spn.utils.graph import full_binarization
-from lbp import lbp
+from experiment_scripts.lbp import lbp
 
 from os import path
 

@@ -4,7 +4,7 @@ from typing import Mapping, Any
 import logging
 from pathlib import Path
 from spn.io.file import to_graph_viz
-from database import DB
+from maua_et_al_experiments.database import DB
 from spn.actions.base import Action
 
 class Graph(Action):

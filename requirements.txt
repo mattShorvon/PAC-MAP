@@ -1,84 +1,102 @@
-appdirs==1.4.3
-appnope==0.1.4
-arff==0.9
-astroid==2.3.3
-atomicwrites==1.3.0
-attrs==19.3.0
-backcall==0.1.0
-black==18.9b0
-bleach==3.1.0
-Click==7.0
-coverage==5.0.3
-cycler==0.10.0
-Cython==0.29.15
-debugpy==1.5.1
-decorator==4.4.1
-defusedxml==0.6.0
-entrypoints==0.3
-importlib-metadata==1.5.0
-ipykernel==5.1.4
-ipython==7.12.0
-ipython-genutils==0.2.0
-ipywidgets==7.5.1
-isort==4.3.21
-jedi==0.16.0
-Jinja2==2.11.1
-joblib==0.14.1
-jsonschema==3.2.0
-jupyter==1.0.0
-jupyter-client==5.3.4
-jupyter-console==6.1.0
-jupyter-core==4.6.2
-kiwisolver==1.1.0
-lazy-object-proxy==1.4.3
-liac-arff==2.4.0
-MarkupSafe==1.1.1
-matplotlib==3.1.3
-mccabe==0.6.1
-mistune==0.8.4
-more-itertools==8.2.0
-mypy==0.761
-mypy-extensions==0.4.3
-nbconvert==5.6.1
-nbformat==5.0.4
-notebook==6.0.3
-numpy==1.18.1
-packaging==20.1
-pandas==1.1.5
-pandocfilters==1.4.2
-parso==0.6.1
-pexpect==4.8.0
-pickleshare==0.7.5
-Pillow==7.0.0
-pluggy==0.13.1
-prometheus_client==0.7.1
-prompt-toolkit==3.0.3
-ptyprocess==0.6.0
-py==1.8.1
-pybind11==3.0.1
-Pygments==2.5.2
-pylint==2.4.4
-pyparsing==2.4.6
-pyrsistent==0.15.7
-pytest==5.3.5
-pytest-cov==2.8.1
-python-dateutil==2.8.1
-pytz==2025.2
-pyzmq==18.1.1
-qtconsole==4.6.0
-rope==0.16.0
-scipy==1.4.1
-Send2Trash==1.5.0
-six==1.14.0
-terminado==0.8.3
-testpath==0.4.4
-toml==0.10.0
-tornado==6.0.3
-traitlets==4.3.3
-typed-ast==1.4.1
-typing-extensions==3.7.4.1
-wcwidth==0.1.8
-webencodings==0.5.1
-widgetsnbextension==3.5.1
-wrapt==1.11.2
-zipp==2.2.0
+# packages in environment at /Users/matthewshorvon/miniconda3/envs/pyspn:
+#
+# Name                    Version                   Build  Channel
+appdirs                   1.4.3                    pypi_0    pypi
+appnope                   0.1.4                    pypi_0    pypi
+arff                      0.9                      pypi_0    pypi
+astroid                   2.3.3                    pypi_0    pypi
+atomicwrites              1.3.0                    pypi_0    pypi
+attrs                     19.3.0                   pypi_0    pypi
+backcall                  0.1.0                    pypi_0    pypi
+black                     18.9b0                   pypi_0    pypi
+bleach                    3.1.0                    pypi_0    pypi
+ca-certificates           2025.7.15            hecd8cb5_0  
+click                     7.0                      pypi_0    pypi
+coverage                  5.0.3                    pypi_0    pypi
+cycler                    0.10.0                   pypi_0    pypi
+cython                    0.29.15                  pypi_0    pypi
+debugpy                   1.5.1                    pypi_0    pypi
+decorator                 4.4.1                    pypi_0    pypi
+defusedxml                0.6.0                    pypi_0    pypi
+entrypoints               0.3                      pypi_0    pypi
+importlib-metadata        7.0.1            py38hecd8cb5_0  
+ipykernel                 5.1.4                    pypi_0    pypi
+ipython                   7.12.0                   pypi_0    pypi
+ipython-genutils          0.2.0                    pypi_0    pypi
+ipywidgets                7.5.1                    pypi_0    pypi
+isort                     4.3.21                   pypi_0    pypi
+jedi                      0.16.0                   pypi_0    pypi
+jinja2                    2.11.1                   pypi_0    pypi
+joblib                    0.14.1                   pypi_0    pypi
+jsonschema                3.2.0                    pypi_0    pypi
+jupyter                   1.0.0                    pypi_0    pypi
+jupyter-client            5.3.4                    pypi_0    pypi
+jupyter-console           6.1.0                    pypi_0    pypi
+jupyter-core              4.6.2                    pypi_0    pypi
+kiwisolver                1.1.0                    pypi_0    pypi
+lazy-object-proxy         1.4.3                    pypi_0    pypi
+liac-arff                 2.4.0                    pypi_0    pypi
+libcxx                    19.1.7               haebbb44_3  
+libffi                    3.4.4                hecd8cb5_1  
+markupsafe                1.1.1                    pypi_0    pypi
+matplotlib                3.1.3                    pypi_0    pypi
+mccabe                    0.6.1                    pypi_0    pypi
+mistune                   0.8.4                    pypi_0    pypi
+more-itertools            8.2.0                    pypi_0    pypi
+mypy                      0.761                    pypi_0    pypi
+mypy-extensions           0.4.3                    pypi_0    pypi
+nbconvert                 5.6.1                    pypi_0    pypi
+nbformat                  5.0.4                    pypi_0    pypi
+ncurses                   6.5                  h923df54_0  
+notebook                  6.0.3                    pypi_0    pypi
+numpy                     1.18.1                   pypi_0    pypi
+openssl                   3.0.17               hee2dfae_0  
+packaging                 25.0                     pypi_0    pypi
+pandas                    1.1.5                    pypi_0    pypi
+pandocfilters             1.4.2                    pypi_0    pypi
+parso                     0.6.1                    pypi_0    pypi
+pexpect                   4.8.0                    pypi_0    pypi
+pickleshare               0.7.5                    pypi_0    pypi
+pillow                    7.0.0                    pypi_0    pypi
+pip                       24.2             py38hecd8cb5_0  
+pluggy                    0.13.1                   pypi_0    pypi
+prometheus-client         0.7.1                    pypi_0    pypi
+prompt-toolkit            3.0.3                    pypi_0    pypi
+ptyprocess                0.6.0                    pypi_0    pypi
+py                        1.8.1                    pypi_0    pypi
+pybind11                  3.0.1                    pypi_0    pypi
+pygments                  2.5.2                    pypi_0    pypi
+pylint                    2.4.4                    pypi_0    pypi
+pyparsing                 2.4.6                    pypi_0    pypi
+pyrsistent                0.15.7                   pypi_0    pypi
+pytest                    5.3.5                    pypi_0    pypi
+pytest-cov                2.8.1                    pypi_0    pypi
+python                    3.8.20               hce00570_0  
+python-dateutil           2.8.1                    pypi_0    pypi
+pytz                      2025.2                   pypi_0    pypi
+pyzmq                     18.1.1                   pypi_0    pypi
+qtconsole                 4.6.0                    pypi_0    pypi
+readline                  8.3                  h49f2429_0  
+rope                      0.16.0                   pypi_0    pypi
+scipy                     1.4.1                    pypi_0    pypi
+send2trash                1.5.0                    pypi_0    pypi
+setuptools                75.1.0           py38hecd8cb5_0  
+six                       1.14.0                   pypi_0    pypi
+spn                       0.1.0                     dev_0    <develop>
+sqlite                    3.50.2               hc8b0dd6_1  
+terminado                 0.8.3                    pypi_0    pypi
+testpath                  0.4.4                    pypi_0    pypi
+tk                        8.6.15               h3a5a201_0  
+toml                      0.10.0                   pypi_0    pypi
+tornado                   6.0.3                    pypi_0    pypi
+traitlets                 4.3.3                    pypi_0    pypi
+typed-ast                 1.4.1                    pypi_0    pypi
+typing-extensions         3.7.4.1                  pypi_0    pypi
+wcwidth                   0.1.8                    pypi_0    pypi
+webencodings              0.5.1                    pypi_0    pypi
+wheel                     0.44.0           py38hecd8cb5_0  
+widgetsnbextension        3.5.1                    pypi_0    pypi
+wrapt                     1.11.2                   pypi_0    pypi
+xz                        5.6.4                h46256e1_1  
+zipp                      2.2.0                    pypi_0    pypi
+zlib                      1.2.13               h4b97444_1  

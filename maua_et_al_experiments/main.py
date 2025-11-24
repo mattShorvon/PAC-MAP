@@ -1,5 +1,5 @@
 """Main: Test file to run the app"""
-from app import App
+from maua_et_al_experiments.app import App
 
 
 def main():

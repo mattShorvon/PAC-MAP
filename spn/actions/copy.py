@@ -2,7 +2,7 @@
 
 import logging
 import copy
-from database import DB
+from maua_et_al_experiments.database import DB
 from spn.actions.base import Action
 
 class Copy(Action):

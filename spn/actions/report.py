@@ -3,7 +3,7 @@
 from typing import Any, Tuple, Callable
 import time
 import logging
-from database import DB
+from maua_et_al_experiments.database import DB
 from spn.node.base import SPN
 from spn.utils.evidence import Evidence
 from spn.actions.map_algorithms.naive import naive

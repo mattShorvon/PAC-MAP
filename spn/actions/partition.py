@@ -2,7 +2,7 @@
 
 from typing import Tuple
 import logging
-from database import DB
+from maua_et_al_experiments.database import DB
 from spn.actions.base import Action
 from spn.data.partitioned_data import PartitionedData
 from spn.data.parsed_data import ParsedData
