@@ -79,13 +79,23 @@
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
-                {
+        {
             "name":"Python: plot_results.py",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/plot_results.py",
             "console": "integratedTerminal",
             "args": ["-q", "0.1", "-e", "0.1", "-dn", "small_datasets", "-dt", "21-11-2025 17:27:08"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        },
+        {
+            "name":"Python: batchsize_vs_runtime.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiment_scripts/batchsize_vs_runtime.py",
+            "console": "integratedTerminal",
+            "args": ["-q", "0.1", "-e", "0.1", "-dp", "20-datasets", "-d", "accidents", "-bs", "2", "4", "8", "16", "32"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         }

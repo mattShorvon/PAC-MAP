@@ -10,6 +10,7 @@ def pac_map(
         spn: SPN, 
         evidence: Evidence, 
         marginalized: List[Variable] = [],
+        batch_size: int = 10,
         err_tol: float = 0.05,
         fail_prob: float = 0.05,
         ) -> Tuple[Evidence, float]:
@@ -18,7 +19,6 @@ def pac_map(
     seen_hashes = set()
     m = 0
     M = float('inf')
-    n_batch = 10
     p_hat = float('-inf')
     p_tick = 0
     q_hat = None
@@ -31,11 +31,11 @@ def pac_map(
 
     while m < M:
         # Update number of samples taken so far
-        m += n_batch
+        m += batch_size
 
         # Draw new samples from P(Q | E)
         new_samples = sample(spn, 
-                             num_samples=n_batch,
+                             num_samples=batch_size,
                              evidence=evidence)
         
         # Add samples that haven't been seen before to candidate_list 

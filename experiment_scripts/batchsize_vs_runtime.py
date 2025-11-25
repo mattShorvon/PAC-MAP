@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 import time
 from spn.utils.evidence import Evidence
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(
     description="PAC-MAP batch-size vs runtime experiment parameters"
@@ -23,25 +24,25 @@ parser.add_argument('-q', '--q-percent', type=float,
                     help="Proportion of query variables")
 parser.add_argument('-e', '--e-percent', type=float,
                     help="Proportion of evidence variables")
-parser.add_argument('--results-file', default='batchsz_vs_runtime_results.csv',
-                    help='Path to file to store results in, if storing in ' \
-                    'a single results file')
 parser.add_argument('-dt', '--date',
-                    default=datetime.now().strftime("%Y-%m-%d %H-%M-%S"),
+                    default=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
                     help='Date and time of experiment')
 
 # Parse the input arguments
 args = parser.parse_args()
 data_path = args.data_path
 datasets = args.datasets
-batch_sizes = args.batch_sizes
+batch_sizes = sorted([int(bs) for bs in args.batch_sizes])
 if args.q_percent and args.e_percent:
     q_percent = args.q_percent
     e_percent = args.e_percent
 else: 
     q_percent, e_percent = None, None
-results_filename = args.results_file
 datetime_str = args.date
+results_dir = "batchsz_vs_runtime_results"
+datetime_folder = Path(results_dir) / datetime_str
+datetime_folder.mkdir(parents=True, exist_ok=True)
+results_filename = datetime_folder / f'results_{q_percent}q_{e_percent}e.csv'
 
 for dataset in datasets:
     # Load the spn
@@ -101,7 +102,7 @@ for dataset in datasets:
             m = [var for var in spn.scope() if var not in q and var not in e]
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map(
-                spn, e, m
+                spn, e, m, batch_size=batch_sz
             )
             # pac_map_prob = spn.value(pac_map_est)
             pac_map_time = time.perf_counter() - start
@@ -121,3 +122,53 @@ for dataset in datasets:
     results_dt = pd.DataFrame(results)
     file_exists = os.path.isfile(results_filename)
     results_dt.to_csv(results_filename, mode='a', header=not file_exists, index=False)
+
+    # Plot the results
+    runtime_results = results_dt.groupby(['Batch Size'])['Runtime'].agg(
+        Mean_Runtime="mean",
+        Std_Runtime="std"
+    ).reset_index()
+    prob_results = results_dt.groupby(['Batch Size'])['MAP Probability'].agg(
+        Mean_Prob="mean",
+        Std_Prob="std"
+    ).reset_index()
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
+    ax1.errorbar(
+        runtime_results['Batch Size'],
+        runtime_results['Mean_Runtime'],
+        yerr=runtime_results['Std_Runtime'],
+        marker='o',
+        linestyle='-',
+        capsize=5,
+        capthick=2,
+        label = 'Mean Runtime'
+    )
+    ax1.set_xscale('log')
+    ax1.set_ylabel('Mean Runtime (seconds)')
+    ax1.set_xlabel('Batch Size')
+    ax1.set_title(f'Average Runtime vs Batch Size\n({q_percent}q {e_percent}e) on {dataset}', fontsize=14)
+    ax1.grid(True, alpha=0.3)
+    ax1.legend()
+
+    ax2.errorbar(
+        prob_results['Batch Size'],
+        prob_results['Mean_Prob'],
+        yerr = prob_results['Std_Prob'],
+        marker='o',
+        linestyle='-',
+        capsize=5,
+        capthick=2,
+        label='Mean MAP Probability'
+    )
+    ax2.set_xscale('log')
+    ax2.set_xlabel('Batch Size', fontsize=12)
+    ax2.set_ylabel('MAP Probability', fontsize=12)
+    ax2.set_title(f'Average MAP Probability vs Batch Size\n({q_percent}q {e_percent}e) on {dataset}', fontsize=14)
+    ax2.grid(True, alpha=0.3)
+    ax2.legend()
+    plt.tight_layout()
+    plot_filename = datetime_folder / f'batch_size_{dataset}_{q_percent}q_{e_percent}e.png'
+    plt.savefig(plot_filename, dpi=300, bbox_inches='tight')
+    print(f"Plot saved to: {plot_filename}")
+    plt.show()
