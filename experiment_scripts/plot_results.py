@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import argparse
+from pathlib import Path
 
 parser = argparse.ArgumentParser(description='MAP Benchmark Results Plotter')
 parser.add_argument('-q', '--q-percent', type=float, default=0.1,
@@ -24,6 +25,10 @@ dataset_name = args.dataset_name
 # Load results
 all_results = pd.read_csv('benchmark_results.csv')
 all_results = all_results[all_results["Date"] == datetime_str]
+all_results = all_results[all_results["Query Proportion"] == q_percent]
+all_results = all_results[all_results["Evid Proportion"] == e_percent]
+
+
 results = all_results.groupby(
     ['Dataset', 'Method'])['MAP Probability'].agg(
     Mean_MAP_Probability='mean',
@@ -38,28 +43,42 @@ results_wide = results.pivot(
     values=['Mean_MAP_Probability', 'Std_MAP_Probability']
 )
 
-# Find the winning method for each row (method that produced the MAP 
-# assignment with the highest probability)
-def find_winners(row):
-    mean_probs = row['Mean_MAP_Probability']
-    max_prob = mean_probs.max()
-    winners = mean_probs[mean_probs == max_prob].index.tolist()
-    return winners
+# Produce summary of results based on ranks of each method's prob
 
-results_wide['Winner'] = results_wide.apply(find_winners, axis=1)
+def find_all_ranking(row):
+    """
+    Find method's rankings based on their Mean_MAP_Probability for each
+    dataset.
+    """
+    # Round to avoid floating point comparison issues
+    mean_probs = row['Mean_MAP_Probability'].round(10)
 
-# Count the number of times each method was a winner
-winner_counts = results_wide['Winner'].explode().value_counts()
-for method in results['Method'].unique(): 
-    if method not in winner_counts:
-        winner_counts[method] = 0
+    # Rank with method='min' gives same rank to ties
+    ranks = mean_probs.rank(method='min', ascending=False)
+    return ranks.values.tolist()
+
+results_wide['All_Ranks'] = results_wide.apply(find_all_ranking, axis=1)
+methods = results['Method'].unique()
+rank_matrix = pd.DataFrame(
+    results_wide['All_Ranks'].tolist(),
+    columns=methods,
+    index=results_wide.index
+)
+results_summary = pd.DataFrame({
+    'Method': methods,
+    'Average_Rank': rank_matrix.mean().round(4),
+    'Median_Rank': rank_matrix.median().round(4),
+    'Std_Rank': rank_matrix.std().round(4),
+    'Times_Ranked_1st': (rank_matrix == 1).sum(),
+    'Times_Ranked_Last': (rank_matrix == len(methods)).sum()
+}).sort_values('Average_Rank')
 
 # Combine mean and std into single strings
 for method in results['Method'].unique():
     results_wide[method] = (
-        results_wide['Mean_MAP_Probability'][method].map('{:.3e}'.format) + 
+        results_wide['Mean_MAP_Probability'][method].map('{:.5g}'.format) + 
         ' +/- ' + 
-        results_wide['Std_MAP_Probability'][method].map('{:.3e}'.format)
+        results_wide['Std_MAP_Probability'][method].map('{:.5g}'.format)
     )
 
 # Keep only the combined columns
@@ -78,24 +97,38 @@ runtime_results_wide = runtime_results.pivot(
     values=['Mean_Runtime', 'Std_Runtime']
 )
 
-def find_runtime_winners(row):
-    mean_probs = row['Mean_Runtime']
-    max_prob = mean_probs.min()
-    winners = mean_probs[mean_probs == max_prob].index.tolist()
-    return winners
+def find_runtime_ranking(row):
+    """
+    Find method's rankings based on their Mean_Runtime for each
+    dataset.
+    """
+    # Round to avoid floating point comparison issues
+    mean_probs = row['Mean_Runtime'].round(10)
 
-runtime_results_wide['Winner'] = runtime_results_wide.apply(
-    find_runtime_winners, axis=1
+    # Rank with method='min' gives same rank to ties
+    ranks = mean_probs.rank(method='min', ascending=True)
+    return ranks.values.tolist()
+
+runtime_results_wide['All_Ranks'] = runtime_results_wide.apply(find_runtime_ranking, axis=1)
+methods = results['Method'].unique()
+runtime_rank_matrix = pd.DataFrame(
+    runtime_results_wide['All_Ranks'].tolist(),
+    columns=methods,
+    index=runtime_results_wide.index
 )
-winners_runtime = runtime_results_wide['Winner'].explode().value_counts()
-for method in results['Method'].unique(): 
-    if method not in winners_runtime:
-        winners_runtime[method] = 0
+runtime_results_summary = pd.DataFrame({
+    'Method': methods,
+    'Average_Rank': runtime_rank_matrix.mean().round(4),
+    'Median_Rank': runtime_rank_matrix.median().round(4),
+    'Std_Rank': runtime_rank_matrix.std().round(4),
+    'Times_Ranked_1st': (runtime_rank_matrix == 1).sum(),
+    'Times_Ranked_Last': (runtime_rank_matrix == len(methods)).sum()
+}).sort_values('Average_Rank')
 
 for method in runtime_results['Method'].unique():
     runtime_results_wide[method] = (
-        runtime_results_wide['Mean_Runtime'][method].map('{:.3e}'.format) + 
-        '+/e' + runtime_results_wide['Std_Runtime'][method].map('{:.3e}'.format)
+        runtime_results_wide['Mean_Runtime'][method].map('{:.5g}'.format) + 
+        '+/e' + runtime_results_wide['Std_Runtime'][method].map('{:.5g}'.format)
     )
 
 runtime_results_wide = runtime_results_wide[
@@ -103,27 +136,34 @@ runtime_results_wide = runtime_results_wide[
 ]
 runtime_results_wide = runtime_results_wide.reset_index()
 
-# Merge summaries into one
-winner_summary = pd.DataFrame({
-    'Method': winner_counts.index.union(winners_runtime.index),
-})
-winner_summary['Probability_Wins'] = winner_summary['Method'].map(winner_counts).fillna(0).astype(int)
-winner_summary['Runtime_Wins'] = winner_summary['Method'].map(winners_runtime).fillna(0).astype(int)
-print("\nWinner Summary:")
-print(winner_summary)
+# Merge the summaries
+separator1 = pd.DataFrame([['---'] * len(results_summary.columns)], 
+                         columns=results_summary.columns,
+                         index=['MAP PROB RESULTS →'])
+separator2 = pd.DataFrame([['---'] * len(results_summary.columns)], 
+                         columns=results_summary.columns,
+                         index=['RUNTIME RESULTS →'])
+summary = pd.concat([
+    separator1,
+    results_summary,
+    separator2,
+    runtime_results_summary
+])
 
 # Save the results to csvs
-print(results_wide)
+print(summary)
+datetime_folder = Path('results') / datetime_str
+datetime_folder.mkdir(parents=True, exist_ok=True)
 results_wide.to_csv(
-    f'results/{dataset_name}_results_{q_percent}q{e_percent}e_{datetime_str}.csv', 
+    datetime_folder / f'{dataset_name}_results_{q_percent}q{e_percent}e_{datetime_str}.csv', 
     index=False
 )
 runtime_results_wide.to_csv(
-    f'results/{dataset_name}_runtimes_{q_percent}q{e_percent}e_{datetime_str}.csv', 
+    datetime_folder / f'{dataset_name}_runtimes_{q_percent}q{e_percent}e_{datetime_str}.csv', 
     index=False
 )
-winner_summary.to_csv(
-    f'results/{dataset_name}_summary_{q_percent}q{e_percent}e_{datetime_str}.csv',
+summary.to_csv(
+    datetime_folder / f'{dataset_name}_summary_{q_percent}q{e_percent}e_{datetime_str}.csv',
     index=False
 )
 
