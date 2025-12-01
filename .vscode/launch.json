@@ -85,7 +85,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/plot_results.py",
             "console": "integratedTerminal",
-            "args": ["-q", "0.25", "-e", "0.25", "-dn", "small_datasets", "-dt", "24-11-2025 22:42:44"],
+            "args": ["-q", "0.1", "-e", "0.1", "-dn", "small_datasets", "-dt", "24-11-2025 22:42:44"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },

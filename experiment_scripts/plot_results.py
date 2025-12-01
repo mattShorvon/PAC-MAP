@@ -28,6 +28,79 @@ all_results = all_results[all_results["Date"] == datetime_str]
 all_results = all_results[all_results["Query Proportion"] == q_percent]
 all_results = all_results[all_results["Evid Proportion"] == e_percent]
 
+# Hamming distance analysis
+def hamming_distance_from_strings(est1_str, est2_str):
+    """
+    Calculate Hamming distance between two MAP estimates stored as strings.
+    Example: "{3: [0], 1: [21], 24: [2]}" vs "{3: [1], 1: [21], 24: [2]}"
+    """
+    import ast
+    
+    # Convert string representations to dictionaries
+    est1 = ast.literal_eval(est1_str)
+    est2 = ast.literal_eval(est2_str)
+    
+    # Count differences
+    distance = 0
+    for var_id in est1.keys():
+        if est1[var_id] != est2[var_id]:
+            distance += 1
+    
+    return distance
+
+# For each dataset and query, find the best assignment and PAC_MAP's distance to it
+hamming_results = []
+all_results['Query_Instance'] = (
+    all_results.groupby(['Dataset', 'Query'])
+    .cumcount() // 5  # This is to ensure that if two query/evidence sets had 
+                      # the same query, they are not lumped into the same group
+)
+num_methods = len(all_results['Method'].unique())
+for (dataset, query, query_inst), group in all_results.groupby(
+    ['Dataset', 'Query', 'Query_Instance']):
+
+    # Check that the group has num_methods rows (one for each method)
+    assert group.shape[0] == num_methods, \
+        f"Expected {len(num_methods)} rows, got {len(group)} for {dataset}, {query}, instance {query_inst}"
+
+    # Find the assignment with highest probability (across all methods)
+    best_idx = group['MAP Probability'].idxmax()
+    best_assignment = group.loc[best_idx, 'MAP Estimate']
+    best_prob = group.loc[best_idx, 'MAP Probability']
+    best_method = group.loc[best_idx, 'Method']
+    
+    # Get PAC_MAP's assignment for this query
+    pac_map_row = group[group['Method'] == 'PAC_MAP']
+    
+    if len(pac_map_row) > 0:
+        pac_map_assignment = pac_map_row['MAP Estimate'].values[0]
+        pac_map_prob = pac_map_row['MAP Probability'].values[0]
+        
+        # Calculate Hamming distance
+        hamming_dist = hamming_distance_from_strings(pac_map_assignment, best_assignment)
+        
+        hamming_results.append({
+            'Dataset': dataset,
+            'Query': query,
+            'Query Instance': query_inst,
+            'Best_Method': best_method,
+            'Best_Probability': best_prob,
+            'PAC_MAP_Probability': pac_map_prob,
+            'Hamming_Distance': hamming_dist
+        })
+
+hamming_df = pd.DataFrame(hamming_results)
+
+# Group by dataset
+dataset_summary = hamming_df.groupby('Dataset').agg(
+    Hamming_Mean=('Hamming_Distance', 'mean'),
+    Hamming_Median=('Hamming_Distance', 'median'),
+    Hamming_Max=('Hamming_Distance', 'max'),
+    Times_Optimal=('Hamming_Distance', lambda x: (x == 0).sum()),
+    Best_Prob_Mean=('Best_Probability', 'mean'),
+    PAC_MAP_Prob_Mean=('PAC_MAP_Probability', 'mean')
+)
+print(dataset_summary)
 
 results = all_results.groupby(
     ['Dataset', 'Method'])['MAP Probability'].agg(
@@ -44,7 +117,6 @@ results_wide = results.pivot(
 )
 
 # Produce summary of results based on ranks of each method's prob
-
 def find_all_ranking(row):
     """
     Find method's rankings based on their Mean_MAP_Probability for each
@@ -165,6 +237,9 @@ runtime_results_wide.to_csv(
 summary.to_csv(
     datetime_folder / f'{dataset_name}_summary_{q_percent}q{e_percent}e_{datetime_str}.csv',
     index=False
+)
+dataset_summary.to_csv(
+    datetime_folder / f'{dataset_name}_hamming_{q_percent}q{e_percent}e_{datetime_str}.csv'
 )
 
 # Table to send to David, comment out if running pipeline
