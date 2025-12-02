@@ -66,6 +66,6 @@ def pac_map(
         if p_tick <= p_hat/(1 - err_tol):
             M = 0
         else:
-            M = ((1 - err_tol)/p_hat) * fail_prob
+            M = np.log(fail_prob) / np.log((1 - p_hat)/(1 - err_tol))
 
     return [q_hat, p_hat]
