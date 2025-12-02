@@ -13,6 +13,7 @@ from spn.actions.map_algorithms.argmax_product import (
 )
 from spn.actions.map_algorithms.max_search import max_search, forward_checking
 from spn.actions.map_algorithms.pac_map import pac_map
+from spn.actions.map_algorithms.pac_map_hammingdist import pac_map_hamming
 from experiment_scripts.lbp import lbp
 from spn.utils.graph import full_binarization
 from spn.utils.evidence import Evidence
@@ -309,6 +310,25 @@ for dataset in datasets:
                 "Runtime": pac_map_time
             })
             print(f"PAC MAP:           {pac_map_prob:.4g}")
+            print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
+            print()
+        if "PACMAP-H" in methods:
+            start = time.perf_counter()
+            pac_map_est, pac_map_prob = pac_map_hamming(
+                spn, e, m, eta = 0.9, batch_size=1 # These are debug params
+            )
+            # pac_map_prob = spn.value(pac_map_est)
+            pac_map_time = time.perf_counter() - start
+            results.append({
+                "Date": datetime_str,
+                "Dataset": dataset,
+                "Query": str([query.id for query in q]),
+                "Method": "PAC_MAP_Hamming",
+                "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
+                "MAP Probability": pac_map_prob,
+                "Runtime": pac_map_time
+            })
+            print(f"PAC MAP Hamming:           {pac_map_prob:.4g}")
             print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
             print()
     if run_success:

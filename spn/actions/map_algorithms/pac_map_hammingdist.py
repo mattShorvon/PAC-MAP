@@ -6,11 +6,31 @@ from spn.actions.likelihood import ll_from_data
 import numpy as np
 from spn.structs import Variable
 
-def pac_map(
+def sample_evid_to_tuple(evid):
+    """Convert sample in Evidence() dictionary format to hashable tuple 
+    (assumes 1 val per variable)."""
+    return tuple(sorted((var.id, vals[0]) for var, vals in evid.items())) 
+
+def explore(spn, batch_size, evidence, m):
+    # Draw new samples from P(Q | E)
+    new_samples = sample(spn, 
+                        num_samples=batch_size,
+                        evidence=evidence)
+    
+    # Update number of samples taken so far
+    m += batch_size
+    return new_samples, m
+
+def exploit(q_hat):
+    pass
+
+def pac_map_hamming(
         spn: SPN, 
         evidence: Evidence, 
         marginalized: List[Variable] = [],
         batch_size: int = 10,
+        h_radius: int = 1,
+        eta: float = 0.5,
         err_tol: float = 0.05,
         fail_prob: float = 0.05,
         ) -> Tuple[Evidence, float]:
@@ -23,20 +43,21 @@ def pac_map(
     p_tick = 0
     q_hat = None
     p_evid = spn.value(evidence)
-    
-    def sample_evid_to_tuple(evid):
-        """Convert sample in Evidence() dictionary format to hashable tuple 
-        (assumes 1 val per variable)."""
-        return tuple(sorted((var.id, vals[0]) for var, vals in evid.items())) 
 
     while m < M:
-        # Update number of samples taken so far
-        m += batch_size
+        actions = ['explore', 'exploit']
+        action = np.random.choice(actions, size=1, p=[1 - eta, eta]).tolist()[0]
 
-        # Draw new samples from P(Q | E)
-        new_samples = sample(spn, 
-                             num_samples=batch_size,
-                             evidence=evidence)
+        if action == 'explore':
+            new_samples, m = explore(spn, batch_size, evidence, m)
+        
+        if action == 'exploit':
+            if m == 0:
+                # Can't exploit if no samples have been drawn yet
+                new_samples, m = explore(spn, batch_size, evidence, m)
+            else:
+                new_samples = exploit(q_hat)
+
         
         # Add samples that haven't been seen before to candidate_list 
         # (uses hashset for O(1) membership check)
