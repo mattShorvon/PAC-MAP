@@ -60,7 +60,8 @@ parser.add_argument('--results-file', default='benchmark_results.csv',
 parser.add_argument('-dt', '--date',
                     default=datetime.now().strftime("%Y-%m-%d %H-%M-%S"),
                     help='Date and time of experiment')
-
+parser.add_argument('--eta', nargs='+', default='0.5', 
+                    help='list of eta parameters for pac-map local search methods')
 parser.set_defaults(learn=False)
 
 args = parser.parse_args()
@@ -83,6 +84,7 @@ query_evid_filemode = args.file_mode
 no_results_file = args.no_res_file
 results_filename = args.results_file
 datetime_str = args.date
+eta_list = [float(eta) for eta in args.eta]
 
 print(f"Datasets: {datasets}")
 print(f"MAP methods being run: {methods}")
@@ -313,24 +315,25 @@ for dataset in datasets:
             print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
             print()
         if "PACMAP-H" in methods:
-            start = time.perf_counter()
-            pac_map_est, pac_map_prob = pac_map_hamming(
-                spn, e, m, eta = 0.9, batch_size=1 # These are debug params
-            )
-            # pac_map_prob = spn.value(pac_map_est)
-            pac_map_time = time.perf_counter() - start
-            results.append({
-                "Date": datetime_str,
-                "Dataset": dataset,
-                "Query": str([query.id for query in q]),
-                "Method": "PAC_MAP_Hamming",
-                "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
-                "MAP Probability": pac_map_prob,
-                "Runtime": pac_map_time
-            })
-            print(f"PAC MAP Hamming:           {pac_map_prob:.4g}")
-            print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
-            print()
+            for eta in eta_list:
+                start = time.perf_counter()
+                pac_map_est, pac_map_prob = pac_map_hamming(
+                    spn, e, m, eta = eta, batch_size=10 
+                )
+                # pac_map_prob = spn.value(pac_map_est)
+                pac_map_time = time.perf_counter() - start
+                results.append({
+                    "Date": datetime_str,
+                    "Dataset": dataset,
+                    "Query": str([query.id for query in q]),
+                    "Method": f"PAC_MAP_Hamming_eta{eta}",
+                    "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
+                    "MAP Probability": pac_map_prob,
+                    "Runtime": pac_map_time
+                })
+                print(f"PAC MAP Hamming eta{eta}:           {pac_map_prob:.4g}")
+                print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
+                print()
     if run_success:
         results_dt = pd.DataFrame(results)
         if q_percent and e_percent:
