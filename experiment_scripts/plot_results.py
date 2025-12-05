@@ -49,13 +49,14 @@ def hamming_distance_from_strings(est1_str, est2_str):
     return distance
 
 # For each dataset and query, find the best assignment and PAC_MAP's distance to it
+num_methods = len(all_results['Method'].unique())
 hamming_results = []
 all_results['Query_Instance'] = (
     all_results.groupby(['Dataset', 'Query'])
-    .cumcount() // 5  # This is to ensure that if two query/evidence sets had 
-                      # the same query, they are not lumped into the same group
+    .cumcount() // num_methods  # This is to ensure that if two query/evidence 
+                      # sets had the same query, they are not lumped into the same group
 )
-num_methods = len(all_results['Method'].unique())
+
 for (dataset, query, query_inst), group in all_results.groupby(
     ['Dataset', 'Query', 'Query_Instance']):
 

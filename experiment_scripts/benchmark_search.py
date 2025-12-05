@@ -1,3 +1,5 @@
+# Benchmark experiment just for hyperparameter tuning of pac-map + search methods
+
 import os
 import sys
 from pathlib import Path
@@ -5,18 +7,10 @@ from spn.io.file import from_file
 from spn.actions.learn import Learn
 from spn.learn import gens
 from spn.data.partitioned_data import PartitionedData
-from spn.actions.map_algorithms.max_product import (
-    max_product_with_evidence_and_marginals,
-)
-from spn.actions.map_algorithms.argmax_product import (
-    argmax_product_with_evidence_and_marginalized,
-)
 from spn.actions.map_algorithms.max_search import max_search, forward_checking
 from spn.actions.map_algorithms.pac_map import pac_map
 from spn.actions.map_algorithms.pac_map_hammingdist import pac_map_hamming
 from spn.actions.map_algorithms.pac_map_topk import pac_map_topk
-from experiment_scripts.lbp import lbp
-from spn.utils.graph import full_binarization
 from spn.utils.evidence import Evidence
 import argparse
 import pandas as pd
@@ -63,6 +57,8 @@ parser.add_argument('-dt', '--date',
                     help='Date and time of experiment')
 parser.add_argument('--eta', nargs='+', default='0.5', 
                     help='list of eta parameters for pac-map local search methods')
+parser.add_argument('--n-batch', nargs='+', default='10', 
+                    help='list of n_batch parameters for pac-map local search methods')
 parser.set_defaults(learn=False)
 
 args = parser.parse_args()
@@ -86,6 +82,8 @@ no_results_file = args.no_res_file
 results_filename = args.results_file
 datetime_str = args.date
 eta_list = [float(eta) for eta in args.eta]
+n_batch_list = [int(n_batch) for n_batch in args.n_batch]
+h_radius_list = [1, 2] # list of h_radius vals to use for 
 
 print(f"Datasets: {datasets}")
 print(f"MAP methods being run: {methods}")
@@ -198,145 +196,79 @@ for dataset in datasets:
         print("Marginalized:", ' '.join([f"{v.id}({v.n_categories})" for v in m ]))
         print()
         run_success = True
-        if "MP" in methods:
+
+        # Max Search benchmark
+        try:
             start = time.perf_counter()
-            mp_est_full, _ = max_product_with_evidence_and_marginals(
-                spn, e, m
+            ms_est, _ = max_search(
+                spn,
+                forward_checking,
+                time_limit=60, # just giving it 1 minute for this run-through, don't care that much about MS's results anyway
+                marginalized_variables=m,
+                evidence=e,
             )
-            mp_est = Evidence({var: vals for var, vals in mp_est_full.items() 
-                if var not in m})
-            mp_prob = spn.value(mp_est) / p_evid
-            mp_time = time.perf_counter() - start
-            
+            ms_prob = spn.value(ms_est) / p_evid
+            ms_time = time.perf_counter() - start
             results.append({
                 "Date": datetime_str,
                 "Dataset": dataset,
                 "Query": str([query.id for query in q]),
-                "Method": "Max Product",
-                "MAP Estimate": str({var.id: mp_est[var] for var in q}),
-                "MAP Probability": mp_prob,
-                "Runtime": mp_time
+                "Method": "Max Search",
+                "MAP Estimate": str({var.id: ms_est[var] for var in q}),
+                "MAP Probability": ms_prob,
+                "Runtime": ms_time
             })
-            print(f"MP:           {mp_prob:.4g}")
-            print("MAP Est:", ' '.join([str(mp_est[v]) for v in q]))
+            print(f"MS:           {ms_prob:.4g}")
+            print("MAP Est:", ' '.join([str(ms_est[v]) for v in q]))
             print()
-        if "AMP" in methods:
-            start = time.perf_counter()
-            amp_est, _ = argmax_product_with_evidence_and_marginalized(
-                spn, e, m
-            )
-            filtered_sample = Evidence({var: vals for var, vals in amp_est.items() 
-                                            if var not in m})
-            amp_prob = spn.value(amp_est) / p_evid
-            amp_time = time.perf_counter() - start
-            results.append({
-                "Date": datetime_str,
-                "Dataset": dataset,
-                "Query": str([query.id for query in q]),
-                "Method": "ArgMax Product",
-                "MAP Estimate": str({var.id: amp_est[var] for var in q}),
-                "MAP Probability": amp_prob,
-                "Runtime": amp_time
-            })
-            print(f"AMP:           {amp_prob:.4g}")
-            print("MAP Est:", ' '.join([str(amp_est[v]) for v in q]))
-            print()
-        if "MS" in methods:
-            try:
-                start = time.perf_counter()
-                ms_est, _ = max_search(
-                    spn,
-                    forward_checking,
-                    time_limit=60, # just giving it 1 minute for this run-through, don't care that much about MS's results anyway
-                    marginalized_variables=m,
-                    evidence=e,
-                )
-                ms_prob = spn.value(ms_est) / p_evid
-                ms_time = time.perf_counter() - start
-                results.append({
-                    "Date": datetime_str,
-                    "Dataset": dataset,
-                    "Query": str([query.id for query in q]),
-                    "Method": "Max Search",
-                    "MAP Estimate": str({var.id: ms_est[var] for var in q}),
-                    "MAP Probability": ms_prob,
-                    "Runtime": ms_time
-                })
-                print(f"MS:           {ms_prob:.4g}")
-                print("MAP Est:", ' '.join([str(ms_est[v]) for v in q]))
-                print()
-            except TimeoutError as error:
-                print("MS timed out")
-                print(error)
-        if "HBP" in methods:
-            try:
-                spn_bin = full_binarization(spn)
-                spn_bin.fix_scope()
-                spn_bin.fix_topological_order()
-                start = time.perf_counter()
-                hbp_est_full = lbp(spn_bin, e, m, num_iterations=5)
-                hbp_est = Evidence({var: vals for var, vals in hbp_est_full.items() 
-                                if var not in m})
-                hbp_prob = spn_bin.value(hbp_est) / p_evid
-                hbp_time = time.perf_counter() - start
-                results.append({
-                    "Date": datetime_str,
-                    "Dataset": dataset,
-                    "Query": str([query.id for query in q]),
-                    "Method": "Hybrid Belief-Propagation",
-                    "MAP Estimate": str({var.id: hbp_est[var] for var in q}),
-                    "MAP Probability": hbp_prob,
-                    "Runtime": hbp_time
-                })
-                print(f"HBP:           {hbp_prob:.4g}")
-                print("MAP Est:", ' '.join([str(hbp_est[v]) for v in q]))
-                print()
-            except Exception as error:
-                print(f"HBP failed with error {error}")
-                print(f"Error type: {type(error).__name__}")
-                run_success = False
-                break 
-        if "PACMAP" in methods:
-            start = time.perf_counter()
-            pac_map_est, pac_map_prob = pac_map(
-                spn, e, m
-            )
-            # pac_map_prob = spn.value(pac_map_est)
-            pac_map_time = time.perf_counter() - start
-            results.append({
-                "Date": datetime_str,
-                "Dataset": dataset,
-                "Query": str([query.id for query in q]),
-                "Method": "PAC_MAP",
-                "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
-                "MAP Probability": pac_map_prob,
-                "Runtime": pac_map_time
-            })
-            print(f"PAC MAP:           {pac_map_prob:.4g}")
-            print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
-            print()
+        except TimeoutError as error:
+            print("MS timed out")
+            print(error)
+
+        # Vanilla PACMAP benchmark
+        start = time.perf_counter()
+        pac_map_est, pac_map_prob = pac_map(
+            spn, e, m
+        )
+        # pac_map_prob = spn.value(pac_map_est)
+        pac_map_time = time.perf_counter() - start
+        results.append({
+            "Date": datetime_str,
+            "Dataset": dataset,
+            "Query": str([query.id for query in q]),
+            "Method": "PAC_MAP",
+            "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
+            "MAP Probability": pac_map_prob,
+            "Runtime": pac_map_time
+        })
+        print(f"PAC MAP:           {pac_map_prob:.4g}")
+        print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
+        print()
+
         if "PACMAP-H" in methods:
             for eta in eta_list:
-                start = time.perf_counter()
-                pac_map_est, pac_map_prob = pac_map_hamming(
-                    spn, e, m, eta = eta, batch_size=10 
-                )
-                # pac_map_prob = spn.value(pac_map_est)
-                pac_map_time = time.perf_counter() - start
-                results.append({
-                    "Date": datetime_str,
-                    "Dataset": dataset,
-                    "Query": str([query.id for query in q]),
-                    "Method": f"PAC_MAP_Hamming_eta{eta}",
-                    "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
-                    "MAP Probability": pac_map_prob,
-                    "Runtime": pac_map_time
-                })
-                print(f"PAC MAP Hamming eta{eta}:           {pac_map_prob:.4g}")
-                print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
-                print()
+                for n_batch in n_batch_list: 
+                    for radius in h_radius_list:
+                        start = time.perf_counter()
+                        pac_map_est, pac_map_prob = pac_map_hamming(
+                            spn, e, m, eta=eta, batch_size=n_batch, h_radius=radius
+                        )
+                        # pac_map_prob = spn.value(pac_map_est)
+                        pac_map_time = time.perf_counter() - start
+                        results.append({
+                            "Date": datetime_str,
+                            "Dataset": dataset,
+                            "Query": str([query.id for query in q]),
+                            "Method": f"PAC_MAP_H_eta{eta}_n{n_batch}_rad{radius}",
+                            "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
+                            "MAP Probability": pac_map_prob,
+                            "Runtime": pac_map_time
+                        })
+                        print(f"PAC MAP H eta{eta} n{n_batch} rad{radius}: {pac_map_prob:.4g}")
+                        print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
+                        print()
         if "PACMAP-TopK" in methods:
-            eta = 0.3
+            eta = 0.5 # debug value
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map_topk(
                 spn, e, m, k=10, eta=eta,

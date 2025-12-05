@@ -5,9 +5,10 @@ from spn.actions.sample import sample
 from spn.actions.likelihood import ll_from_data
 import numpy as np
 from spn.structs import Variable
-from itertools import combinations
-from itertools import product
 import copy
+import pandas as pd
+from collections import defaultdict
+
 
 
 def sample_evid_to_tuple(evid):
@@ -32,98 +33,67 @@ def explore(spn, batch_size, evidence, m):
     m += batch_size
     return new_samples, m
 
-def exploit(q_hat, evidence, h_radius=1):
+def exploit(candidates, evidence, n_batch=10):
     """
-    Generate all neighbours within Hamming distance h_radius from q_hat.
+    Take the existing candidates, sort them by probability and take the top k. 
+    Then for each feature, use the k candidates to find the empirical prob that
+    the feature has each value, then draw from a categorical distribution with
+    probs given by these empirical probs.
     """
+    # Filter out evidence vars
+    filtered_candidates = [
+        Evidence({var: vals for var, vals in cand.items() if var not in evidence})
+        for cand in candidates
+    ]
+
+    # Create a hash map of the number of times each value of each var appears
+    vars = filtered_candidates[0].variables
+    value_counts = defaultdict(lambda: defaultdict(int))
+    for cand in filtered_candidates:
+        for var in vars:
+            val = cand[var][0]
+            value_counts[var][val] += 1
     
+    # Convert the counts to probabilities
+    for var in vars:
+        for val in value_counts[var]:
+            value_counts[var][val] = value_counts[var][val]/len(filtered_candidates)
+    
+    # Use these probabilities to sample n_batch new samples. 
+    new_samples = []
+    for _ in range(n_batch):
+        sample = Evidence()
+        for var in vars:
+            vals = list(value_counts[var].keys())
+            probs = list(value_counts[var].values())
+            sample_val = np.random.choice(a=vals, size=1, p=probs)[0]
+            sample[var] = [sample_val]
+        sample.merge(evidence)
+        new_samples.append(sample)
+    
+    return new_samples
+
+def exploit_binary(candidates):
+    """
+    Take the existing candidates, sort them by probability and take the top k. 
+    Then for each feature, use the k candidates to find the empirical prob that
+    the feature has value 1, then draw from a bernoulli distribution with
+    probs given by these empirical probs.
+    """
     # Filter out evidence variables
     q_hat_filtered = Evidence(
         {var: vals for var, vals in q_hat.items() if var not in evidence}
     )
     
     neighbours = []
-    variables = list(q_hat_filtered.keys())
-    
-    # For each subset of variables to flip (size = h_radius)
-    for vars_to_flip in combinations(variables, h_radius):
-        # Build list of possible alternative values for each variable to flip
-        value_options = []
-        for var in vars_to_flip:
-            current_val = q_hat_filtered[var][0]
-            # All values except the current one
-            alternative_vals = [v for v in range(var.n_categories) if v != current_val]
-            value_options.append(alternative_vals)
-        
-        # Generate all combinations of alternative values
-        for value_combination in product(*value_options):
-            # Create a new neighbour with these flipped values
-            neighbour = copy.deepcopy(Evidence(q_hat_filtered))
-            for var, new_val in zip(vars_to_flip, value_combination):
-                neighbour[var] = [new_val]
-            
-            # Add the evidence vars back into the neighbour and add it to list
-            neighbour.merge(evidence)
-            neighbours.append(neighbour)
-    
     return neighbours
 
-def exploit_bitwise(q_hat, evidence, h_radius=1):
-    """
-    Generate all neighbours within Hamming distance h_radius from q_hat.
-    Uses faster bitwise XOR operations but only works for binary data
-    """
-    # Filter out evidence variables
-    q_hat_filtered = Evidence(
-        {var: vals for var, vals in q_hat.items() if var not in evidence}
-    )
-    
-    # Sort variables by ID for consistent ordering
-    variables = sorted(q_hat_filtered.keys(), key=lambda v: v.id)
-    n_vars = len(variables)
-    
-    # Convert to bitstring
-    bitstring = 0
-    for i, var in enumerate(variables):
-        if q_hat_filtered[var][0] == 1:
-            bitstring |= (1 << i)
-    
-    neighbours = []
-    
-    if h_radius == 1:
-        # Fast path: flip each bit once
-        for i in range(n_vars):
-            neighbour_bits = bitstring ^ (1 << i)
-            
-            # Convert back to Evidence
-            neighbour = Evidence()
-            for j, var in enumerate(variables):
-                bit_value = (neighbour_bits >> j) & 1
-                neighbour[var] = [bit_value]
-            
-            neighbours.append(neighbor)
-    else:
-        # General case for h_radius > 1
-        from itertools import combinations
-        for positions in combinations(range(n_vars), h_radius):
-            flip_mask = sum(1 << pos for pos in positions)
-            neighbor_bits = bitstring ^ flip_mask
-            
-            neighbor = Evidence()
-            for j, var in enumerate(variables):
-                bit_value = (neighbor_bits >> j) & 1
-                neighbor[var] = [bit_value]
-            
-            neighbours.append(neighbor)
-    
-    return neighbours
-
-def pac_map_hamming(
+def pac_map_topk(
         spn: SPN, 
         evidence: Evidence, 
         marginalized: List[Variable] = [],
         batch_size: int = 10,
-        h_radius: int = 1,
+        k: int = 10,
         eta: float = 0.1,
         err_tol: float = 0.05,
         fail_prob: float = 0.05,
@@ -150,9 +120,12 @@ def pac_map_hamming(
                 # Can't exploit if no samples have been drawn yet
                 new_samples, m = explore(spn, batch_size, evidence, m)
             else:
-                new_samples = exploit(q_hat, evidence)
+                candidate_ids = [i for i, _ in enumerate(candidate_list)]
+                probs_df = pd.DataFrame()
+                sorted_cand_ids = np.argsort(probs)[::-1][:k]
+                topk_cands = [candidate_list[i] for i in sorted_cand_ids]
+                new_samples = exploit(topk_cands, evidence, batch_size)
 
-        
         # Add samples that haven't been seen before to candidate_list 
         # (uses hashset for O(1) membership check)
         unseen_samples = []
