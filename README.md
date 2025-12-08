@@ -7,8 +7,9 @@ circuits they are working with being better or worse fitted to the data.
 
 ## How to install and run
 
-- Initialise a conda/virtual environment
-- Run pip install requirements.txt
+- Use the environment.yml file to initialise a conda environment with the required packages
+- Activate the conda environment
+- Install spn as a local package in development mode (run 'pip install -e .')
 - Run the experiment pipeline with run_all.sh
 
 The run_all.sh script runs three files in sequence that together constitute the

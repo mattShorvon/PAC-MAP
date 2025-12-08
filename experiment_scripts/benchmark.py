@@ -2,9 +2,6 @@ import os
 import sys
 from pathlib import Path
 import pandas as pd
-print("Imported modules:")
-for module_name in sorted(sys.modules.keys()):
-    print(module_name)
 from spn.io.file import from_file
 from spn.actions.learn import Learn
 from spn.learn import gens
@@ -302,7 +299,7 @@ for dataset in datasets:
         if "PACMAP" in methods:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map(
-                spn, e, m, batch_size=100, err_tol=0.1, fail_prob=0.1
+                spn, e, m, batch_size=100, err_tol=0.01, fail_prob=0.01
             )
             # pac_map_prob = spn.value(pac_map_est)
             pac_map_time = time.perf_counter() - start
@@ -322,7 +319,7 @@ for dataset in datasets:
             for eta in eta_list:
                 start = time.perf_counter()
                 pac_map_est, pac_map_prob = pac_map_hamming(
-                    spn, e, m, eta = eta, batch_size=100, err_tol=0.1, fail_prob=0.1
+                    spn, e, m, eta = eta, batch_size=100, err_tol=0.01, fail_prob=0.01
                 )
                 # pac_map_prob = spn.value(pac_map_est)
                 pac_map_time = time.perf_counter() - start
@@ -339,10 +336,9 @@ for dataset in datasets:
                 print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
                 print()
         if "PACMAP-TopK" in methods:
-            eta = 0.1
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map_topk(
-                spn, e, m, k=100, eta=eta, batch_size=100, err_tol=0.1, fail_prob=0.1
+                spn, e, m, k=100, eta=0.1, batch_size=100, err_tol=0.01, fail_prob=0.01
             )
             # pac_map_prob = spn.value(pac_map_est)
             pac_map_time = time.perf_counter() - start
