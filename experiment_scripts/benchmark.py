@@ -14,7 +14,7 @@ from spn.actions.map_algorithms.argmax_product import (
 )
 from spn.actions.map_algorithms.max_search import max_search, forward_checking
 from spn.actions.map_algorithms.pac_map import pac_map
-from spn.actions.map_algorithms.pac_map_hammingdist import pac_map_hamming, pac_map_hamming_no_eta
+from spn.actions.map_algorithms.pac_map_hammingdist import pac_map_hamming
 from spn.actions.map_algorithms.pac_map_topk import pac_map_topk
 from experiment_scripts.lbp import lbp
 from spn.utils.graph import full_binarization
@@ -318,7 +318,7 @@ for dataset in datasets:
         if "PACMAP-H" in methods:
             for eta in eta_list:
                 start = time.perf_counter()
-                pac_map_est, pac_map_prob = pac_map_hamming_no_eta(
+                pac_map_est, pac_map_prob = pac_map_hamming(
                     spn, e, m, batch_size=100, err_tol=0.01, fail_prob=0.01
                 )
                 # pac_map_prob = spn.value(pac_map_est)
