@@ -208,6 +208,7 @@ tags
 /test_inputs
 /small_datasets
 /20-datasets
+/big_datasets
 
 # results files
 *.csv
