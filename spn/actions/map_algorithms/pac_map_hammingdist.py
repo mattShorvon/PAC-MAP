@@ -122,7 +122,7 @@ def pac_map_hamming(
         spn: SPN, 
         evidence: Evidence, 
         marginalized: List[Variable] = [],
-        batch_size: int = 10,
+        batch_size: int = 100,
         h_radius: int = 1,
         err_tol: float = 0.05,
         fail_prob: float = 0.05,

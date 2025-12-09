@@ -92,7 +92,7 @@ def pac_map_topk(
         spn: SPN, 
         evidence: Evidence, 
         marginalized: List[Variable] = [],
-        batch_size: int = 10,
+        batch_size: int = 100,
         k: int = 10,
         err_tol: float = 0.05,
         fail_prob: float = 0.05,
@@ -150,15 +150,16 @@ def pac_map_topk(
                 unseen_samples.append(filtered_sample)
                 candidate_list.append(filtered_sample)
         
-        # Compute likelihoods for new, unseen samples
-        new_probs = np.exp(ll_from_data(spn, unseen_samples)) / p_evid
-        probs.extend(new_probs)
+        if unseen_samples:
+            # Compute likelihoods for new, unseen samples
+            new_probs = np.exp(ll_from_data(spn, unseen_samples)) / p_evid
+            probs.extend(new_probs)
 
-        # Check if you need to update the best candidate
-        if max(probs) > p_hat:
-            p_hat = max(probs)
-            q_hat_idx = np.argmax(probs)
-            q_hat = candidate_list[q_hat_idx]
+            # Check if you need to update the best candidate
+            if max(probs) > p_hat:
+                p_hat = max(probs)
+                q_hat_idx = np.argmax(probs)
+                q_hat = candidate_list[q_hat_idx]
         
         # Check if you can issue the PAC certificate, currently doing this in 
         # prob space rather than log lik space
