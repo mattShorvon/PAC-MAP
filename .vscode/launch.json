@@ -40,12 +40,12 @@
             "justMyCode": true
         },
         {
-            "name":"Python: benchmark.py with accidents",
+            "name":"Python: benchmark.py with ad",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "accidents", "-m", "PACMAP-H", "--no-learn", "--data-path", "20-datasets", "-q", "0.25", "-e", "0.25"],
+            "args": ["-d", "ad", "-m", "MP", "AMP", "PACMAP", "PACMAP-H", "--no-learn", "--data-path", "20-datasets", "-q", "0.25", "-e", "0.25"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },

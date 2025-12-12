@@ -108,11 +108,11 @@ if __name__ == "__main__":
     profiler.enable()
 
     # Load the data
-    dataset = 'car'
+    dataset = 'audiology'
     data_path = 'small_datasets'
     spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
-    q_percent = 0.25
-    e_percent = 0.75
+    q_percent = 0.1
+    e_percent = 0.9
     queries, evidences = [], []
     with open(
         f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map"
