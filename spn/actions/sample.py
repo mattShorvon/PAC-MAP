@@ -9,7 +9,10 @@ from spn.utils.evidence import Evidence
 import copy
 
 
-def sample(spn: SPN, num_samples: int = 1, evidence: Evidence = None):
+def sample(spn: SPN, 
+           num_samples: int = 1, 
+           evidence: Evidence = None, 
+           marginalized: list = None):
     """
     Sample from an SPN.
     
@@ -21,14 +24,21 @@ def sample(spn: SPN, num_samples: int = 1, evidence: Evidence = None):
     Returns:
         List of Evidence objects, one per sample
     """
+    if marginalized is None:
+        marginalized = []
+
     samples = []
     for _ in range(num_samples):
-        sample = _sample_recursive(spn, copy.deepcopy(evidence) or Evidence())
+        sample = _sample_recursive(spn, 
+                                   copy.deepcopy(evidence) or Evidence(),
+                                   marginalized)
         samples.append(sample)
     return samples
 
 
-def _sample_recursive(spn: SPN, evidence: Evidence = None):
+def _sample_recursive(spn: SPN, 
+                      evidence: Evidence = None, 
+                      marginalized: list = None):
     """
     Recursively sample from a node given evidence.
     
@@ -39,21 +49,26 @@ def _sample_recursive(spn: SPN, evidence: Evidence = None):
     Returns:
         Evidence object with sampled values
     """
+    if marginalized is None:
+        marginalized = []
+
     if isinstance(spn, SumNode): # try, but might replace with spn.type == 'sum'
-        return _sample_sum(spn, evidence)
+        return _sample_sum(spn, evidence, marginalized)
     elif isinstance(spn, ProductNode):
-        return _sample_product(spn, evidence)
+        return _sample_product(spn, evidence, marginalized)
     elif isinstance(spn, Indicator):
-        return _sample_indicator(spn, evidence)
+        return _sample_indicator(spn, evidence, marginalized)
     elif isinstance(spn, GaussianNode):
-        return _sample_gaussian(spn, evidence)
+        return _sample_gaussian(spn, evidence, marginalized)
     elif isinstance(spn, MultinomialNode):
-        return _sample_multinomial(spn, evidence)
+        return _sample_multinomial(spn, evidence, marginalized)
     else:
         raise ValueError(f"Unsupported node type: {type(spn)}")
 
 
-def _sample_sum(node: SPN, evidence: Evidence = None):
+def _sample_sum(node: SPN, 
+                evidence: Evidence = None,
+                marginalized: list = None):
     """Sample from a sum node by choosing a child based on weights."""
     # Normalize weights
     weights = np.array(node.weights)
@@ -64,10 +79,12 @@ def _sample_sum(node: SPN, evidence: Evidence = None):
     child = node.children[child_idx]
     
     # Sample from chosen child
-    return _sample_recursive(child, evidence)
+    return _sample_recursive(child, evidence, marginalized)
 
 
-def _sample_product(node: SPN, evidence: Evidence = None):
+def _sample_product(node: SPN, 
+                    evidence: Evidence = None,
+                    marginalized: list = None):
     """Sample from a product node by sampling from all children."""
     current_evidence = Evidence(evidence)
     
@@ -75,18 +92,24 @@ def _sample_product(node: SPN, evidence: Evidence = None):
         # Sample from each child and merge into evidence.
         # Each child should cover a different variable/set of variables because
         # the product node should be decomposable.
-        child_sample = _sample_recursive(child, current_evidence)
+        child_sample = _sample_recursive(child, current_evidence, marginalized)
         current_evidence.merge(child_sample)
     
     return current_evidence
 
 
-def _sample_indicator(node: SPN, evidence: Evidence = None):
+def _sample_indicator(node: SPN, 
+                      evidence: Evidence = None,
+                      marginalized: list = None):
     """Sample from an indicator (categorical) node."""
     var = node.variable
     
     # If variable already has evidence, use it
     if var in evidence:
+        return evidence
+    
+    # If the variable should be marginalized, skip sampling
+    if var in marginalized:
         return evidence
     
     # Otherwise, sample the value this indicator represents
@@ -95,12 +118,18 @@ def _sample_indicator(node: SPN, evidence: Evidence = None):
     return result
 
 
-def _sample_gaussian(node: SPN, evidence: Evidence = None):
+def _sample_gaussian(node: SPN, 
+                     evidence: Evidence = None,
+                     marginalized: list = None):
     """Sample from a Gaussian node."""
     var = node.var
     
     # If variable already has evidence, use it
     if var in evidence:
+        return evidence
+
+    # If the variable should be marginalized, skip sampling
+    if var in marginalized:
         return evidence
     
     # Sample from Gaussian distribution
@@ -111,12 +140,18 @@ def _sample_gaussian(node: SPN, evidence: Evidence = None):
     return result
 
 
-def _sample_multinomial(node: SPN, evidence: Evidence = None):
+def _sample_multinomial(node: SPN, 
+                        evidence: Evidence = None,
+                        marginalized: list = None):
     """Sample from a multinomial node."""
     var = node.var
     
     # If variable already has evidence, use it
     if var in evidence:
+        return evidence
+
+    # If the variable should be marginalized, skip sampling
+    if var in marginalized:
         return evidence
     
     # Sample from categorical distribution
@@ -129,7 +164,10 @@ def _sample_multinomial(node: SPN, evidence: Evidence = None):
     return result
 
 
-def sample_with_evidence(node: SPN, num_samples=1, evidence: Evidence =None):
+def sample_with_evidence(node: SPN, 
+                         num_samples=1, 
+                         evidence: Evidence=None,
+                         marginalized: list=None):
     """
     Sample from an SPN with evidence.
     
@@ -143,10 +181,12 @@ def sample_with_evidence(node: SPN, num_samples=1, evidence: Evidence =None):
     """
     if evidence is None:
         evidence = Evidence()
+    if marginalized is None:
+        marginalized = []
     
     samples = []
     for _ in range(num_samples):
-        sample = _sample_recursive(node, Evidence(evidence))
+        sample = _sample_recursive(node, Evidence(evidence), marginalized)
         samples.append(sample)
     
     return samples

@@ -7,6 +7,7 @@ from pathlib import Path
 import random
 from spn.io.file import from_file
 from spn.utils.evidence import Evidence
+from spn.actions.sample import sample
 
 # EXAMPLE: python make_queries_and_evids.py -dp benchmark_datasets -all -q 0.4 -e 0.4
 # Check command line args and initialise variables
@@ -81,6 +82,7 @@ for dataset in datasets:
         print(error)
         print("moving on to the next dataset")
 
+    # Write the query and evidence lines
     lines = []
     for i in range(num_queries):
         num_q_vars = np.floor(num_features * q_percent)
@@ -90,6 +92,7 @@ for dataset in datasets:
         if num_e_vars == 0.0:
             num_e_vars = 1
         q_var_ids = random.sample(range(num_features), int(num_q_vars))
+        query_vars = [var for var in spn.scope() if var.id in q_var_ids]
         remaining = [i for i in range(num_features) if i not in q_var_ids]
         test_evid_prob = 0.0
         evidences_tried = 0
@@ -100,8 +103,15 @@ for dataset in datasets:
             for i, var in enumerate(e_var_ids):
                 test_evid[spn.scope()[var]] = [e_values[i]]
             test_evid_prob = spn.value(test_evid)
-            print(f"Attempt No: {evidences_tried}")
             evidences_tried += 1
+            if evidences_tried > 10:
+                test_evid = sample(spn, 1, None, marginalized=query_vars)[0]
+                print("Couldn't find non-zero prob evidence randomly, "
+                      "resorted to sampling")
+                test_evid_prob = spn.value(test_evid)
+                e_var_ids = [var.id for var in test_evid.variables]
+                e_values = [test_evid[var][0] for var in test_evid.variables]
+
         print(f"Found non-zero prob evidence after {evidences_tried} attempts")
         e_line = ' '.join(
             [f"{var_id} {val}" for var_id, val in zip(e_var_ids, e_values)]
