@@ -45,7 +45,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "ad", "-m", "MP", "AMP", "PACMAP", "PACMAP-H", "--no-learn", "--data-path", "20-datasets", "-q", "0.25", "-e", "0.25"],
+            "args": ["-d", "ad", "-m", "MP", "AMP", "PACMAP", "PACMAP-H", "--no-learn", "--data-path", "20-datasets", "-q", "0.1", "-e", "0.9"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
@@ -63,9 +63,9 @@
             "name":"Python: make_queries_and_evids.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/make_queries_and_evids.py",
+            "program": "${workspaceFolder}/experiment_scripts/make_queries_and_evids.py",
             "console": "integratedTerminal",
-            "args": ["-dp", "small_datasets", "-d", "car", "-q", "0.1", "-e", "0.1"],
+            "args": ["-dp", "20-datasets", "-d", "ad", "-q", "0.1", "-e", "0.9"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
