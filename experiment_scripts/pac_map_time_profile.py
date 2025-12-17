@@ -100,7 +100,6 @@ def pac_map_timed(
     return [q_hat, p_hat]
 
 if __name__ == "__main__":
-    # In your benchmark.py, wrap the call:
     import cProfile
     import pstats
 

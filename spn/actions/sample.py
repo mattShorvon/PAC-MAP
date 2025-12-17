@@ -7,6 +7,41 @@ from spn.node.multinomial import MultinomialNode
 from spn.node.indicator import Indicator
 from spn.utils.evidence import Evidence
 import copy
+from joblib import Parallel, delayed
+import os
+
+def sample_parallel(spn: SPN,
+                    num_samples: int = 1,
+                    evidence: Evidence = None,
+                    marginalized: list = None,
+                    n_jobs: int = -2):
+    # Determine number of workers
+    if n_jobs == -1:
+        n_workers = os.cpu_count()
+    elif n_jobs == -2:
+        n_workers = os.cpu_count() - 1
+    elif n_jobs < 0:
+        n_workers = os.cpu_count() + 1 + n_jobs
+    else:
+        n_workers = n_jobs
+    n_workers = max(1, n_workers)
+
+    # Calculate samples per worker
+    samples_per_worker = num_samples // n_workers
+    remainder = num_samples % n_workers
+
+    # Create batch sizes (distribute remainder)
+    batch_sizes = [samples_per_worker] * n_workers
+    for i in range(remainder):
+        batch_sizes[i] += 1
+
+    # Sample in parallel
+    samples = Parallel(n_jobs=n_workers)(
+        delayed(sample)(spn, batch_size, evidence, marginalized)
+        for batch_size in batch_sizes
+    )
+
+    return [s for batch in samples for s in batch]
 
 
 def sample(spn: SPN, 
