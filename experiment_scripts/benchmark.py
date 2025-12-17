@@ -301,7 +301,7 @@ for dataset in datasets:
         if "PACMAP" in methods:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map(
-                spn, e, m, batch_size=100, err_tol=0.01, fail_prob=0.01
+                spn, e, m, batch_size=100, err_tol=0.01, fail_prob=0.01, sample_cap=200
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start

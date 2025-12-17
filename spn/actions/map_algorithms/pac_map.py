@@ -12,7 +12,8 @@ def pac_map(
         marginalized: List[Variable] = [],
         batch_size: int = 10,
         err_tol: float = 0.05,
-        fail_prob: float = 0.05
+        fail_prob: float = 0.05,
+        sample_cap: int = 100000
         ) -> Tuple[Evidence, float]:
     candidate_list = []
     probs = []
@@ -59,7 +60,7 @@ def pac_map(
             p_hat = max(probs)
             q_hat_idx = np.argmax(probs)
             q_hat = candidate_list[q_hat_idx]
-        
+
         # Check if you can issue the PAC certificate, currently doing this in 
         # prob space rather than log lik space
         p_tick = 1 - sum(probs)
@@ -69,5 +70,12 @@ def pac_map(
             # M = np.log(fail_prob) / np.log((1 - p_hat)/(1 - err_tol)) wrong version
             # M = np.log(fail_prob) / np.log(1 - (p_hat/(1 - err_tol))) correct exact version
             M = np.log(1/fail_prob)/(p_hat/(1 - err_tol)) # correct approximate version
+        
+        # Check if the sample_cap has been hit, stop early and return current
+        # delta and epsilon pareto front if so (not sure how to return them yet)
+        if m >= sample_cap:
+            epsilon = np.linspace(0, 1 - p_hat - 1e-6, 200)
+            delta = (1 - p_hat / (1 - epsilon)) ** M
+            return [q_hat, p_hat]
 
     return [q_hat, p_hat]
