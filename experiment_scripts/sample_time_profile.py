@@ -41,7 +41,8 @@ for evid in evidences:
 time_sequential = time.time() - start
 
 # Get the number of cores, and set the number of jobs
-num_cores = os.cpu_count()
+# num_cores = os.cpu_count()
+num_cores = int(os.environ.get('SLURM_CPUS_PER_TASK', os.cpu_count()))
 num_jobs = max(1, num_cores - 1)
 start = time.time()
 for evid in evidences:  
