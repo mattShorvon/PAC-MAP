@@ -10,8 +10,8 @@ from pathlib import Path
 import os
 
 # Load the data
-dataset = 'mushrooms'
-data_path = 'small_datasets'
+dataset = 'cwebkb'
+data_path = '20-datasets'
 spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
 q_percent = 0.4
 e_percent = 0.6
@@ -35,19 +35,34 @@ with open(
             evidences.append(evidence)
 
 # Test the time taken for the sampling
+n = 100
+print(f"Starting test with {n} samples and {len(evidences)} evidences")
 start = time.time()
-for evid in evidences:
-    sample(spn, num_samples=1000, evidence=evid)
+for i, evid in enumerate(evidences):
+    sample(spn, num_samples=n, evidence=evid)
+    print(f"Completed iteration {i}")
 time_sequential = time.time() - start
 
 # Get the number of cores, and set the number of jobs
 # num_cores = os.cpu_count()
 num_cores = int(os.environ.get('SLURM_CPUS_PER_TASK', os.cpu_count()))
-num_jobs = max(1, num_cores - 1)
+print(f"Num cores: {num_cores}")
+num_jobs = max(1, num_cores) # don't set to num_cores -1 on the cluster
 start = time.time()
-for evid in evidences:  
-    sample_parallel(spn, num_samples=1000, evidence=evid, n_jobs=num_jobs)
+for i,evid in enumerate(evidences):  
+    sample_parallel(spn, num_samples=n, evidence=evid, n_jobs=num_jobs)
+    print(f"Completed iteration {i}")
 time_parallel = time.time() - start
 
 print(f"Time taken by sequential sampling: {time_sequential}")
+print(f"Time taken by parallel sampling with {num_jobs} cores: {time_parallel}")
+
+# Test how long it takes with half the cores
+num_cores_reduced = num_cores / 2
+num_jobs = max(1, num_cores_reduced) # don't set to num_cores -1 on the cluster
+start = time.time()
+for evid in evidences:  
+    sample_parallel(spn, num_samples=n, evidence=evid, n_jobs=num_jobs)
+time_parallel = time.time() - start
+
 print(f"Time taken by parallel sampling with {num_jobs} cores: {time_parallel}")
