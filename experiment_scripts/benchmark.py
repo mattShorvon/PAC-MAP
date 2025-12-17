@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 import pandas as pd
+import numpy as np
 from spn.io.file import from_file
 from spn.actions.learn import Learn
 from spn.learn import gens
@@ -189,7 +190,7 @@ for dataset in datasets:
         m = [var for var in spn.scope() if var not in q and var not in e]
         mp_est, amp_est, ms_est, hbp_est = ["None"] * 4
         mp_prob, amp_prob, ms_prob, hbp_prob = [0] * 4
-        p_evid = spn.value(e)
+        p_evid = spn.log_value(e)
         print("Evidence    :", e)
         print("Query       :", ' '.join([f"{v.id}({v.n_categories})" for v in q ]))
         print("Marginalized:", ' '.join([f"{v.id}({v.n_categories})" for v in m ]))
@@ -202,7 +203,8 @@ for dataset in datasets:
             )
             mp_est = Evidence({var: vals for var, vals in mp_est_full.items() 
                 if var not in m})
-            mp_prob = spn.value(mp_est) / p_evid
+            mp_prob = spn.log_value(mp_est) - p_evid
+            mp_prob = np.exp(mp_prob)
             mp_time = time.perf_counter() - start
             
             results.append({
@@ -224,7 +226,8 @@ for dataset in datasets:
             )
             filtered_sample = Evidence({var: vals for var, vals in amp_est.items() 
                                             if var not in m})
-            amp_prob = spn.value(amp_est) / p_evid
+            amp_prob = spn.log_value(amp_est) - p_evid
+            amp_prob = np.exp(amp_prob)
             amp_time = time.perf_counter() - start
             results.append({
                 "Date": datetime_str,
@@ -248,7 +251,8 @@ for dataset in datasets:
                     marginalized_variables=m,
                     evidence=e,
                 )
-                ms_prob = spn.value(ms_est) / p_evid
+                ms_prob = spn.log_value(ms_est) - p_evid
+                ms_prob = np.exp(ms_prob)
                 ms_time = time.perf_counter() - start
                 results.append({
                     "Date": datetime_str,
@@ -274,7 +278,8 @@ for dataset in datasets:
                 hbp_est_full = lbp(spn_bin, e, m, num_iterations=5)
                 hbp_est = Evidence({var: vals for var, vals in hbp_est_full.items() 
                                 if var not in m})
-                hbp_prob = spn_bin.value(hbp_est) / p_evid
+                hbp_prob = spn_bin.log_value(hbp_est) - p_evid
+                hbp_prob = np.exp(hbp_prob)
                 hbp_time = time.perf_counter() - start
                 results.append({
                     "Date": datetime_str,
@@ -298,7 +303,7 @@ for dataset in datasets:
             pac_map_est, pac_map_prob = pac_map(
                 spn, e, m, batch_size=100, err_tol=0.01, fail_prob=0.01
             )
-            # pac_map_prob = spn.value(pac_map_est)
+            # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
             results.append({
                 "Date": datetime_str,
@@ -317,7 +322,7 @@ for dataset in datasets:
             pac_map_est, pac_map_prob = pac_map_hamming(
                 spn, e, m, batch_size=100, err_tol=0.01, fail_prob=0.01
             )
-            # pac_map_prob = spn.value(pac_map_est)
+            # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
             results.append({
                 "Date": datetime_str,
@@ -336,7 +341,7 @@ for dataset in datasets:
             pac_map_est, pac_map_prob = pac_map_topk(
                 spn, e, m, k=100, batch_size=100, err_tol=0.01, fail_prob=0.01
             )
-            # pac_map_prob = spn.value(pac_map_est)
+            # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
             results.append({
                 "Date": datetime_str,

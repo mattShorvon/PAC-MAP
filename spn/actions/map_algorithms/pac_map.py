@@ -12,7 +12,7 @@ def pac_map(
         marginalized: List[Variable] = [],
         batch_size: int = 10,
         err_tol: float = 0.05,
-        fail_prob: float = 0.05,
+        fail_prob: float = 0.05
         ) -> Tuple[Evidence, float]:
     candidate_list = []
     probs = []
@@ -22,7 +22,7 @@ def pac_map(
     p_hat = float('-inf')
     p_tick = 0
     q_hat = None
-    p_evid = spn.value(evidence)
+    p_evid = spn.log_value(evidence)
     
     def sample_evid_to_tuple(evid):
         """Convert sample in Evidence() dictionary format to hashable tuple 
@@ -51,7 +51,7 @@ def pac_map(
                 candidate_list.append(filtered_sample)
         
         # Compute likelihoods for new, unseen samples
-        new_probs = np.exp(ll_from_data(spn, unseen_samples)) / p_evid
+        new_probs = np.exp(ll_from_data(spn, unseen_samples) - p_evid)
         probs.extend(new_probs)
 
         # Check if you need to update the best candidate
@@ -66,6 +66,8 @@ def pac_map(
         if p_tick <= p_hat/(1 - err_tol):
             M = 0
         else:
-            M = np.log(fail_prob) / np.log((1 - p_hat)/(1 - err_tol))
+            # M = np.log(fail_prob) / np.log((1 - p_hat)/(1 - err_tol)) wrong version
+            # M = np.log(fail_prob) / np.log(1 - (p_hat/(1 - err_tol))) correct exact version
+            M = np.log(1/fail_prob)/(p_hat/(1 - err_tol)) # correct approximate version
 
     return [q_hat, p_hat]

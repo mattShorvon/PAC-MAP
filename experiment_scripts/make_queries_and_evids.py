@@ -94,21 +94,21 @@ for dataset in datasets:
         q_var_ids = random.sample(range(num_features), int(num_q_vars))
         query_vars = [var for var in spn.scope() if var.id in q_var_ids]
         remaining = [i for i in range(num_features) if i not in q_var_ids]
-        test_evid_prob = 0.0
+        test_evid_prob = float('-inf')
         evidences_tried = 0
-        while test_evid_prob == 0.0:
+        while test_evid_prob == float('-inf'):
             e_var_ids = random.sample(remaining, min(int(num_e_vars), len(remaining)))
             e_values = random.choices([0, 1], k=len(e_var_ids))
             test_evid = Evidence()
             for i, var in enumerate(e_var_ids):
                 test_evid[spn.scope()[var]] = [e_values[i]]
-            test_evid_prob = spn.value(test_evid)
+            test_evid_prob = spn.log_value(test_evid)
             evidences_tried += 1
             if evidences_tried > 10:
                 test_evid = sample(spn, 1, None, marginalized=query_vars)[0]
                 print("Couldn't find non-zero prob evidence randomly, "
                       "resorted to sampling")
-                test_evid_prob = spn.value(test_evid)
+                test_evid_prob = spn.log_value(test_evid)
                 e_var_ids = [var.id for var in test_evid.variables]
                 e_values = [test_evid[var][0] for var in test_evid.variables]
 
