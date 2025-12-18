@@ -1,7 +1,7 @@
 from typing import Tuple, List
 from spn.node.base import SPN
 from spn.utils.evidence import Evidence
-from spn.actions.sample import sample, sample_parallel
+from spn.actions.sample import sample, sample_multithread, sample_multiproc
 import numpy as np
 from spn.structs import Variable
 from spn.io.file import from_file
@@ -13,6 +13,7 @@ import os
 dataset = 'cwebkb'
 data_path = '20-datasets'
 spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
+spn_path = Path(f"{data_path}/{dataset}/{dataset}.spn")
 q_percent = 0.4
 e_percent = 0.6
 queries, evidences = [], []
@@ -34,7 +35,7 @@ with open(
                 index += 2
             evidences.append(evidence)
 
-# Test the time taken for the sampling
+# Test the time taken for sequential sampling
 n = 100
 print(f"Starting test with {n} samples and {len(evidences)} evidences")
 start = time.time()
@@ -48,21 +49,31 @@ time_sequential = time.time() - start
 num_cores = int(os.environ.get('SLURM_CPUS_PER_TASK', os.cpu_count()))
 print(f"Num cores: {num_cores}")
 num_jobs = max(1, num_cores) # don't set to num_cores -1 on the cluster
+
+# Test how long it takes with multithreading
 start = time.time()
 for i,evid in enumerate(evidences):  
-    sample_parallel(spn, num_samples=n, evidence=evid, n_jobs=num_jobs)
+    sample_multithread(spn, num_samples=n, evidence=evid, n_jobs=num_jobs)
     print(f"Completed iteration {i}")
-time_parallel = time.time() - start
+time_multithread = time.time() - start
+
+# Test how long it takes with multiprocessing
+start = time.time()
+for i,evid in enumerate(evidences):  
+    sample_multiproc(spn_path, num_samples=n, evidence=evid, n_jobs=num_jobs)
+    print(f"Completed iteration {i}")
+time_multiproc = time.time() - start
 
 print(f"Time taken by sequential sampling: {time_sequential}")
-print(f"Time taken by parallel sampling with {num_jobs} cores: {time_parallel}")
+print(f"Time taken by multithread sampling with {num_jobs} cores: {time_multithread}")
+print(f"Time taken by multiproc sampling with {num_jobs} cores: {time_multiproc}")
 
 # Test how long it takes with half the cores
-num_cores_reduced = num_cores / 2
-num_jobs = max(1, num_cores_reduced) # don't set to num_cores -1 on the cluster
-start = time.time()
-for evid in evidences:  
-    sample_parallel(spn, num_samples=n, evidence=evid, n_jobs=num_jobs)
-time_parallel = time.time() - start
+# num_cores_reduced = num_cores / 2
+# num_jobs = max(1, num_cores_reduced) # don't set to num_cores -1 on the cluster
+# start = time.time()
+# for evid in evidences:  
+#     sample_multiproc(spn, num_samples=n, evidence=evid, n_jobs=num_jobs)
+# time_parallel = time.time() - start
 
-print(f"Time taken by parallel sampling with {num_jobs} cores: {time_parallel}")
+# print(f"Time taken by parallel sampling with {num_jobs} cores: {time_parallel}")

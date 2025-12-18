@@ -74,6 +74,7 @@ def pac_map(
         # Check if the sample_cap has been hit, stop early and return current
         # delta and epsilon pareto front if so (not sure how to return them yet)
         if m >= sample_cap:
+            print("Sample cap reached!")
             epsilon = np.linspace(0, 1 - p_hat - 1e-6, 200)
             delta = (1 - p_hat / (1 - epsilon)) ** M
             return [q_hat, p_hat]

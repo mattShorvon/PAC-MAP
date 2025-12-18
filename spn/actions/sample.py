@@ -9,12 +9,19 @@ from spn.utils.evidence import Evidence
 import copy
 from joblib import Parallel, delayed
 import os
+from spn.io.file import from_file
+from pathlib import Path
 
-def sample_parallel(spn: SPN,
-                    num_samples: int = 1,
-                    evidence: Evidence = None,
-                    marginalized: list = None,
-                    n_jobs: int = -2):
+def _sample_worker(spn_path, batch_size, evidence, marginalized):
+    """Worker function that loads SPN from disk."""
+    spn = from_file(spn_path)
+    return sample(spn, batch_size, evidence, marginalized)
+
+def sample_multiproc(spn_path: Path,
+                     num_samples: int = 1,
+                     evidence: Evidence = None,
+                     marginalized: list = None,
+                     n_jobs: int = -2):
     # Determine number of workers
     if n_jobs == -1:
         n_workers = os.cpu_count()
@@ -35,14 +42,46 @@ def sample_parallel(spn: SPN,
     for i in range(remainder):
         batch_sizes[i] += 1
 
-    # Sample in parallel
+    # Sample in parallel, passing each worker the path to the SPN so that it can
+    # load it itself, rather than trying to pass it an SPN object which may 
+    # cause a pickling recursion limit error
     samples = Parallel(n_jobs=n_workers)(
-        delayed(sample)(spn, batch_size, evidence, marginalized)
+        delayed(_sample_worker)(spn_path, batch_size, evidence, marginalized)
         for batch_size in batch_sizes
     )
 
     return [s for batch in samples for s in batch]
 
+def sample_multithread(spn: SPN,
+                       num_samples: int = 1,
+                       evidence: Evidence = None,
+                       marginalized: list = None,
+                       n_jobs: int = -2):
+    # Determine number of workers
+    if n_jobs < 0:
+        n_workers = os.cpu_count + n_jobs + 1
+    else:
+        n_workers = n_jobs
+    n_workers = max(1, n_workers)
+    
+    # Calculate samples per worker
+    samples_per_worker = num_samples // n_workers
+    remainder = num_samples % n_workers
+
+    # Create batch sizes
+    batch_sizes = [samples_per_worker] * n_workers
+    for i in range(remainder):
+        batch_sizes[i] += 1
+    
+    # Sample in parallel using multithreading (each job shares the same 
+    # memory space this way, which avoids recursion limits being hit when
+    # pickling is attempted on big SPNs during multiprocessing)
+    samples = Parallel(n_jobs=n_workers, backend='threading')(
+        delayed(sample)(spn, batch_size, evidence, marginalized)
+        for batch_size in batch_sizes
+    )
+
+    return [s for batch in samples for s in batch]
 
 def sample(spn: SPN, 
            num_samples: int = 1, 
