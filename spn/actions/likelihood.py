@@ -36,7 +36,7 @@ class Likelihood(Action):
 
 def ll_from_data(spn: SPN, evidences: List[Evidence]) -> float:
     """Returns the log-likelihood from a list of data instances"""
-    results = Parallel(n_jobs=10)(
+    results = Parallel(n_jobs=10, backend='threading')(
         delayed(spn.log_value)(evidence) for evidence in evidences
     )
     # return math.fsum(results) 
