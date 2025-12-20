@@ -58,13 +58,13 @@ def likelihood_multiproc(spn_path: Path = None,
     n_workers = max(1, n_cores)
 
     evidence_arrays = np.array_split(evidences, n_workers)
-    evidence_batches = [array.to_list() for array in evidence_arrays]
+    evidence_batches = [array.tolist() for array in evidence_arrays]
 
     results = Parallel(n_jobs=n_workers)(
         delayed(_likelihood_worker)(spn_path, evid_batch) 
         for evid_batch in evidence_batches
     )
-    return results
+    return [prob for lst in results for prob in lst]
 
 def ll_from_data(spn: SPN, evidences: List[Evidence]) -> List:
     """Returns the log-likelihood from a list of data instances"""

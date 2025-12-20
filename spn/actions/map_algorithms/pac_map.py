@@ -15,7 +15,7 @@ def pac_map(
         batch_size: int = 10,
         err_tol: float = 0.05,
         fail_prob: float = 0.05,
-        sample_cap: int = 100000
+        sample_cap: int = 50000
         ) -> Tuple[Evidence, float]:
     candidate_list = []
     probs = []
