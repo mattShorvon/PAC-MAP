@@ -93,6 +93,7 @@ print(f"Learning SPN from scatch: {learn_spn}")
 for dataset in datasets:
     # Set up the SPN
     print(f"Running benchmark on dataset {dataset}")
+    spn_path = Path(f"{data_path}/{dataset}/{dataset}.spn")
     if learn_spn:
         print("Learning SPN ...")
         kclusters = 10
@@ -119,7 +120,7 @@ for dataset in datasets:
         print("SPN learned:", spn.vars(), "vars and", spn.arcs(), "arcs")
     else:
         try:
-            spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
+            spn = from_file(spn_path)
             print(f"SPN loaded: {spn.vars()} vars and {spn.arcs()} arcs")
         except FileNotFoundError as error:
             print(".spn file doesn't exist in this subfolder")
@@ -301,7 +302,7 @@ for dataset in datasets:
         if "PACMAP" in methods:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map(
-                spn, e, m, batch_size=100, err_tol=0.01, fail_prob=0.01
+                spn, spn_path, e, m, batch_size=1000, err_tol=0.01, fail_prob=0.01
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start

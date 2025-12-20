@@ -1,13 +1,15 @@
 from typing import Tuple, List
 from spn.node.base import SPN
 from spn.utils.evidence import Evidence
-from spn.actions.sample import sample
-from spn.actions.likelihood import ll_from_data
+from spn.actions.sample import sample_multiproc
+from spn.actions.likelihood import likelihood_multiproc
 import numpy as np
 from spn.structs import Variable
+from pathlib import Path
 
 def pac_map(
         spn: SPN, 
+        spn_path: Path,
         evidence: Evidence, 
         marginalized: List[Variable] = [],
         batch_size: int = 10,
@@ -35,9 +37,10 @@ def pac_map(
         m += batch_size
 
         # Draw new samples from P(Q | E)
-        new_samples = sample(spn, 
-                             num_samples=batch_size,
-                             evidence=evidence)
+        new_samples = sample_multiproc(spn_path, 
+                                       num_samples=batch_size,
+                                       evidence=evidence,
+                                       n_jobs=-1)
         
         # Add samples that haven't been seen before to candidate_list 
         # (uses hashset for O(1) membership check)
@@ -52,7 +55,9 @@ def pac_map(
                 candidate_list.append(filtered_sample)
         
         # Compute likelihoods for new, unseen samples
-        new_probs = np.exp(ll_from_data(spn, unseen_samples) - p_evid)
+        new_probs = np.exp(
+            likelihood_multiproc(spn_path, unseen_samples, n_jobs=-1) - p_evid
+        )
         probs.extend(new_probs)
 
         # Check if you need to update the best candidate
