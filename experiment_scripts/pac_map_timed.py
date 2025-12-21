@@ -6,16 +6,18 @@ from spn.io.file import from_file
 from pathlib import Path
 import time
 from spn.actions.map_algorithms.pac_map import pac_map
+import os
 
 # Load the data and initialise experiment vars
-dataset = 'mushrooms'
-data_path = 'small_datasets'
+dataset = 'cwebkb'
+data_path = '20-datasets'
 spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
 spn_path = Path(f"{data_path}/{dataset}/{dataset}.spn")
 q_percent = 0.4
 e_percent = 0.6
 queries, evidences = [], []
 print(f"Dataset: {dataset}")
+print(f"SLURM_NTASKS: {os.environ.get('SLURM_NTASKS')}")
 with open(
     f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map"
     ) as f:
@@ -34,7 +36,7 @@ with open(
                 index += 2
             evidences.append(evidence)
 
-n_batch = 5000
+n_batch = 1000
 n_cap = 50000
 print(f"Running pac_map with a batch size of {n_batch} and sample cap of {n_cap}")
 q = queries[0]
@@ -48,7 +50,7 @@ pac_map_est, pac_map_prob = pac_map(
 pac_map_time = time.perf_counter() - start
 print(f"Time taken by pac_map with batch size {n_batch} and cap {n_cap}: {pac_map_time}")
 
-n_batch = 50000
+n_batch = 500
 n_cap = 50000
 start = time.perf_counter()
 pac_map_est, pac_map_prob = pac_map(

@@ -40,7 +40,8 @@ def pac_map(
         new_samples = sample_multiproc(spn_path, 
                                        num_samples=batch_size,
                                        evidence=evidence,
-                                       n_jobs=-1)
+                                       n_jobs=-1,
+                                       marginalized=marginalized)
         
         # Add samples that haven't been seen before to candidate_list 
         # (uses hashset for O(1) membership check)

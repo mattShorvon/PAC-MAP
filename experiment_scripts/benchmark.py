@@ -62,6 +62,9 @@ parser.add_argument('--results-file', default='benchmark_results.csv',
 parser.add_argument('-dt', '--date',
                     default=datetime.now().strftime("%Y-%m-%d %H-%M-%S"),
                     help='Date and time of experiment')
+parser.add_argument('-id', '--experiment-id', default=1,
+                    help='If running several experiments that you want to be ' \
+                    'paired together, assign them the same id')
 parser.set_defaults(learn=False)
 
 args = parser.parse_args()
@@ -84,6 +87,7 @@ query_evid_filemode = args.file_mode
 no_results_file = args.no_res_file
 results_filename = args.results_file
 datetime_str = args.date
+experiment_id = args.experiment_id
 
 print(f"Datasets: {datasets}")
 print(f"MAP methods being run: {methods}")
@@ -302,7 +306,8 @@ for dataset in datasets:
         if "PACMAP" in methods:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map(
-                spn, spn_path, e, m, batch_size=1000, err_tol=0.01, fail_prob=0.01
+                spn, spn_path, e, m, batch_size=5000, err_tol=0.01, fail_prob=0.01,
+                sample_cap=50000
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
@@ -321,7 +326,8 @@ for dataset in datasets:
         if "PACMAP-H" in methods:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map_hamming(
-                spn, e, m, batch_size=100, err_tol=0.01, fail_prob=0.01
+                spn, spn_path, e, m, batch_size=5000, err_tol=0.01, fail_prob=0.01,
+                sample_cap=50000
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
@@ -361,6 +367,8 @@ for dataset in datasets:
         if q_percent and e_percent:
             results_dt['Query Proportion'] = q_percent
             results_dt['Evid Proportion'] = e_percent
+        if experiment_id:
+            results_dt['Experiment ID'] = experiment_id
         if no_results_file is False:
             file_exists = os.path.isfile(results_filename)
             results_dt.to_csv(results_filename, mode='a', header=not file_exists, index=False)

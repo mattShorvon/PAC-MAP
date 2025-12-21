@@ -1,14 +1,14 @@
 from typing import Tuple, List
 from spn.node.base import SPN
 from spn.utils.evidence import Evidence
-from spn.actions.sample import sample
-from spn.actions.likelihood import ll_from_data
+from spn.actions.sample import sample_multiproc
+from spn.actions.likelihood import likelihood_multiproc
 import numpy as np
 from spn.structs import Variable
 from itertools import combinations
 from itertools import product
 import copy
-
+from pathlib import Path
 
 def sample_evid_to_tuple(evid):
     """Convert sample in Evidence() dictionary format to hashable tuple 
@@ -22,11 +22,13 @@ def bits_to_evid(bitstring, variables):
     return neighbour
 
 
-def explore(spn, batch_size, evidence, m):
+def explore(spn_path, batch_size, evidence, m, marginalized):
     # Draw new samples from P(Q | E)
-    new_samples = sample(spn, 
-                        num_samples=batch_size,
-                        evidence=evidence)
+    new_samples = sample_multiproc(spn_path, 
+                                   num_samples=batch_size,
+                                   evidence=evidence,
+                                   marginalized=marginalized,
+                                   n_jobs=-1)
     
     # Update number of samples taken so far
     m += batch_size
@@ -120,12 +122,14 @@ def exploit_bitwise(q_hat, evidence, h_radius=1):
 
 def pac_map_hamming(
         spn: SPN, 
+        spn_path: Path,
         evidence: Evidence, 
         marginalized: List[Variable] = [],
         batch_size: int = 100,
         h_radius: int = 1,
         err_tol: float = 0.05,
         fail_prob: float = 0.05,
+        sample_cap: int = 50000
         ) -> Tuple[Evidence, float]:
     candidate_list = []
     probs = []
@@ -135,11 +139,11 @@ def pac_map_hamming(
     p_hat = float('-inf')
     p_tick = 0
     q_hat = None
-    p_evid = spn.value(evidence)
+    p_evid = spn.log_value(evidence)
 
     while m < M:
         # Draw new samples
-        new_samples, m = explore(spn, batch_size, evidence, m)
+        new_samples, m = explore(spn_path, batch_size, evidence, m, marginalized)
 
         # Add samples that haven't been seen before to candidate_list 
         # (uses hashset for O(1) membership check)
@@ -154,7 +158,9 @@ def pac_map_hamming(
                 candidate_list.append(filtered_sample)
         
         # Compute likelihoods for new, unseen samples
-        new_probs = np.exp(ll_from_data(spn, unseen_samples)) / p_evid
+        new_probs = np.exp(
+            likelihood_multiproc(spn_path, unseen_samples, n_jobs=-1) - p_evid
+        )
         probs.extend(new_probs)
 
         # Check if you need to update the best candidate
@@ -180,7 +186,9 @@ def pac_map_hamming(
         
         # Compute likelihoods for new, unseen samples
         if unseen_samples:
-            new_probs = np.exp(ll_from_data(spn, unseen_samples)) / p_evid
+            new_probs = np.exp(
+                likelihood_multiproc(spn_path, unseen_samples, n_jobs=-1) - p_evid
+            )
             probs.extend(new_probs)
 
             # Check if you need to update the best candidate
@@ -195,7 +203,17 @@ def pac_map_hamming(
         if p_tick <= p_hat/(1 - err_tol):
             M = 0
         else:
-            M = np.log(fail_prob) / np.log((1 - p_hat)/(1 - err_tol))
+            # M = np.log(fail_prob) / np.log((1 - p_hat)/(1 - err_tol)) wrong version
+            # M = np.log(fail_prob) / np.log(1 - (p_hat/(1 - err_tol))) correct exact version
+            M = np.log(1/fail_prob)/(p_hat/(1 - err_tol)) # correct approximate version
+        
+        # Check if the sample_cap has been hit, stop early and return current
+        # delta and epsilon pareto front if so (not sure how to return them yet)
+        if m >= sample_cap:
+            print("Sample cap reached!")
+            epsilon = np.linspace(0, 1 - p_hat - 1e-6, 200)
+            delta = (1 - p_hat / (1 - epsilon)) ** M
+            return [q_hat, p_hat]
 
     return [q_hat, p_hat]
 
