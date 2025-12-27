@@ -205,9 +205,12 @@ tags
 *.evid
 *.query
 *.data
+*.map
 /test_inputs
 /small_datasets
 /20-datasets
+/20-datasets-big
+/20-datasets-nospn
 /big_datasets
 
 # results files

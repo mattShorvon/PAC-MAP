@@ -15,7 +15,8 @@ def pac_map(
         batch_size: int = 10,
         err_tol: float = 0.05,
         fail_prob: float = 0.05,
-        sample_cap: int = 50000
+        sample_cap: int = 50000,
+        n_jobs: int = -1
         ) -> Tuple[Evidence, float]:
     candidate_list = []
     probs = []
@@ -40,7 +41,7 @@ def pac_map(
         new_samples = sample_multiproc(spn_path, 
                                        num_samples=batch_size,
                                        evidence=evidence,
-                                       n_jobs=-1,
+                                       n_jobs=n_jobs,
                                        marginalized=marginalized)
         
         # Add samples that haven't been seen before to candidate_list 
@@ -57,7 +58,7 @@ def pac_map(
         
         # Compute likelihoods for new, unseen samples
         new_probs = np.exp(
-            likelihood_multiproc(spn_path, unseen_samples, n_jobs=-1) - p_evid
+            likelihood_multiproc(spn_path, unseen_samples, n_jobs=n_jobs) - p_evid
         )
         probs.extend(new_probs)
 

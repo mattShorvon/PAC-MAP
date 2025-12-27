@@ -40,19 +40,12 @@ parser.add_argument('-dp', '--data-path', default='test_inputs',
                     'queries and evidence in them')
 parser.add_argument('-d', '--datasets', nargs='+',
                     help='Dataset names separated by space (e.g., iris nltcs)')
-parser.add_argument('-q', '--q-percent', type=float,
+parser.add_argument('-q', '--q-percent', type=float, required=True,
                     help="Proportion of query variables")
-parser.add_argument('-e', '--e-percent', type=float,
+parser.add_argument('-e', '--e-percent', type=float, required=True,
                     help="Proportion of evidence variables")
 parser.add_argument('-m', '--methods', nargs='+', required=True,
                     help='MAP algos to run, separated by space (e.g. MP AMP)')
-parser.add_argument('--learn', action='store_true',
-                    help='Learn SPN from scratch')
-parser.add_argument('--no-learn', dest='learn', action='store_false',
-                    help='Use existing SPN')
-parser.add_argument('--file-mode', choices=['.map','.query/.evid'], 
-                    default='.map',
-                    help='Format of query/evidence files')
 parser.add_argument('--no-res-file', action="store_true",
                     help="No single file to write the results to, will write" \
                     "to many individual files in each dataset's subfolder instead")
@@ -65,7 +58,6 @@ parser.add_argument('-dt', '--date',
 parser.add_argument('-id', '--experiment-id', default=1,
                     help='If running several experiments that you want to be ' \
                     'paired together, assign them the same id')
-parser.set_defaults(learn=False)
 
 args = parser.parse_args()
 use_all = args.all_datasets
@@ -76,71 +68,42 @@ if use_all:
     )
 else:
     datasets = args.datasets
-if args.q_percent and args.e_percent:
-    q_percent = args.q_percent
-    e_percent = args.e_percent
-else: 
-    q_percent, e_percent = None, None
+q_percent = args.q_percent
+e_percent = args.e_percent
 methods = args.methods
-learn_spn = args.learn
-query_evid_filemode = args.file_mode
 no_results_file = args.no_res_file
 results_filename = args.results_file
 datetime_str = args.date
 experiment_id = args.experiment_id
+n_jobs = int(os.environ.get('SLURM_NTASKS'))
 
 print(f"Datasets: {datasets}")
 print(f"MAP methods being run: {methods}")
-print(f"Learning SPN from scatch: {learn_spn}")
 
 # Run the experiment
 for dataset in datasets:
     # Set up the SPN
     print(f"Running benchmark on dataset {dataset}")
-    spn_path = Path(f"{data_path}/{dataset}/{dataset}.spn")
-    if learn_spn:
-        print("Learning SPN ...")
-        kclusters = 10
-        pval = 0.1
-        try:
-            # Try the first pattern
-            data = PartitionedData(
-                Path(f"{data_path}/{dataset}/{dataset}-train.data"), 1.0
-            )
-        except:
-            # If that fails, try the second pattern
-            try:
-                data = PartitionedData(
-                    Path(f"{data_path}/{dataset}/{dataset}.train.data"), 1.0
-                )
-            except Exception as error:
-                print(f"Failed to load training data: {error}")
-                print(f"Error type: {type(error).__name__}")
-                run_success = False
-                continue 
-            
-        spn = gens(data.scope, data.training_data, kclusters, pval)
-        spn.root = True
-        print("SPN learned:", spn.vars(), "vars and", spn.arcs(), "arcs")
-    else:
-        try:
-            spn = from_file(spn_path)
-            print(f"SPN loaded: {spn.vars()} vars and {spn.arcs()} arcs")
-        except FileNotFoundError as error:
-            print(".spn file doesn't exist in this subfolder")
-            print(error)
-            continue
+    spn_path = Path(f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.spn")
+    try:
+        spn = from_file(spn_path)
+        print(f"SPN loaded: {spn.vars()} vars and {spn.arcs()} arcs")
+    except FileNotFoundError as error:
+        print(".spn file doesn't exist in this subfolder")
+        print(error)
+        continue
 
     # Set up the evidences and queries
     queries, evidences = [], []
-    if query_evid_filemode == ".query/.evid":
-        with open(f"{data_path}/{dataset}/{dataset}.query") as f:
-            for line in f:
-                query = [spn.scope()[int(var_id)] for var_id in line.split()[1:]]
+    with open(
+        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map"
+        ) as f:
+        for line_no, line in enumerate(f):
+            if line_no % 2 == 0: 
+                query = [spn.scope()[int(var_id)] for var_id in line.split()]
                 queries.append(query)
-        with open(f"{data_path}/{dataset}/{dataset}.evid") as f:
-            for line in f:
-                evid_info = line.split()[1:]
+            else: 
+                evid_info = line.split()
                 index = 0
                 evidence = Evidence()
                 while index < len(evid_info):
@@ -149,45 +112,6 @@ for dataset in datasets:
                     evidence[spn.scope()[var_id]] = [val]
                     index += 2
                 evidences.append(evidence)
-    elif query_evid_filemode == ".map":
-        # If the proportion of query and evidence variables has been specified
-        # for this experiment, load the files with them in the name
-        if q_percent and e_percent:
-            with open(
-                f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map"
-                ) as f:
-                for line_no, line in enumerate(f):
-                    if line_no % 2 == 0: 
-                        query = [spn.scope()[int(var_id)] for var_id in line.split()]
-                        queries.append(query)
-                    else: 
-                        evid_info = line.split()
-                        index = 0
-                        evidence = Evidence()
-                        while index < len(evid_info):
-                            var_id = int(evid_info[index])
-                            val = int(evid_info[index + 1])
-                            evidence[spn.scope()[var_id]] = [val]
-                            index += 2
-                        evidences.append(evidence)
-        # Otherwise, load the original .map files that didn't have them in the
-        # names
-        else:
-            with open(f"{data_path}/{dataset}/{dataset}.map") as f:
-                for line_no, line in enumerate(f):
-                    if line_no % 2 == 0: 
-                        query = [spn.scope()[int(var_id)] for var_id in line.split()[1:]]
-                        queries.append(query)
-                    else: 
-                        evid_info = line.split()[1:]
-                        index = 0
-                        evidence = Evidence()
-                        while index < len(evid_info):
-                            var_id = int(evid_info[index])
-                            val = int(evid_info[index + 1])
-                            evidence[spn.scope()[var_id]] = [val]
-                            index += 2
-                        evidences.append(evidence)
     
     # Loop through each evidence and query combo
     results = []
@@ -307,7 +231,7 @@ for dataset in datasets:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map(
                 spn, spn_path, e, m, batch_size=5000, err_tol=0.01, fail_prob=0.01,
-                sample_cap=50000
+                sample_cap=50000, n_jobs=n_jobs
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
@@ -327,7 +251,7 @@ for dataset in datasets:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map_hamming(
                 spn, spn_path, e, m, batch_size=5000, err_tol=0.01, fail_prob=0.01,
-                sample_cap=50000
+                sample_cap=50000, n_jobs=n_jobs
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
@@ -364,9 +288,8 @@ for dataset in datasets:
             print()
     if run_success:
         results_dt = pd.DataFrame(results)
-        if q_percent and e_percent:
-            results_dt['Query Proportion'] = q_percent
-            results_dt['Evid Proportion'] = e_percent
+        results_dt['Query Proportion'] = q_percent
+        results_dt['Evid Proportion'] = e_percent
         if experiment_id:
             results_dt['Experiment ID'] = experiment_id
         if no_results_file is False:
