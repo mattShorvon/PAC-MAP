@@ -109,8 +109,7 @@ def sample(spn: SPN,
         samples.append(sample)
     return samples
 
-
-def _sample_recursive(spn: SPN, 
+def _sample_recursive(node: SPN, 
                       evidence: Evidence = None, 
                       marginalized: list = None):
     """
@@ -126,18 +125,18 @@ def _sample_recursive(spn: SPN,
     if marginalized is None:
         marginalized = []
 
-    if isinstance(spn, SumNode): # try, but might replace with spn.type == 'sum'
-        return _sample_sum(spn, evidence, marginalized)
-    elif isinstance(spn, ProductNode):
-        return _sample_product(spn, evidence, marginalized)
-    elif isinstance(spn, Indicator):
-        return _sample_indicator(spn, evidence, marginalized)
-    elif isinstance(spn, GaussianNode):
-        return _sample_gaussian(spn, evidence, marginalized)
-    elif isinstance(spn, MultinomialNode):
-        return _sample_multinomial(spn, evidence, marginalized)
+    if isinstance(node, SumNode): # try, but might replace with node.type == 'sum'
+        return _sample_sum(node, evidence, marginalized)
+    elif isinstance(node, ProductNode):
+        return _sample_product(node, evidence, marginalized)
+    elif isinstance(node, Indicator):
+        return _sample_indicator(node, evidence, marginalized)
+    elif isinstance(node, GaussianNode):
+        return _sample_gaussian(node, evidence, marginalized)
+    elif isinstance(node, MultinomialNode):
+        return _sample_multinomial(node, evidence, marginalized)
     else:
-        raise ValueError(f"Unsupported node type: {type(spn)}")
+        raise ValueError(f"Unsupported node type: {type(node)}")
 
 
 def _sample_sum(node: SPN, 
@@ -236,31 +235,3 @@ def _sample_multinomial(node: SPN,
     result = Evidence(evidence)
     result[var] = [value]
     return result
-
-
-def sample_with_evidence(node: SPN, 
-                         num_samples=1, 
-                         evidence: Evidence=None,
-                         marginalized: list=None):
-    """
-    Sample from an SPN with evidence.
-    
-    Args:
-        node: Root node of the SPN
-        num_samples: Number of samples to generate
-        evidence: Evidence dictionary with fixed values
-    
-    Returns:
-        List of Evidence objects
-    """
-    if evidence is None:
-        evidence = Evidence()
-    if marginalized is None:
-        marginalized = []
-    
-    samples = []
-    for _ in range(num_samples):
-        sample = _sample_recursive(node, Evidence(evidence), marginalized)
-        samples.append(sample)
-    
-    return samples
