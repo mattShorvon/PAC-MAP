@@ -6,6 +6,7 @@ from spn.data.partitioned_data import PartitionedData
 from spn.io.file import to_file, from_file
 from spn.actions.sample import sample_multiproc, sample
 from spn.actions.likelihood import likelihood_multiproc
+from spn.actions.condition import condition_spn
 from spn.utils.evidence import Evidence
 
 # Script that creates a toy dataset with a known data-generating process, so 
