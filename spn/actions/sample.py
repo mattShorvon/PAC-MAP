@@ -125,8 +125,11 @@ def _sample_recursive(node: SPN,
     if marginalized is None:
         marginalized = []
 
-    if isinstance(node, SumNode): # try, but might replace with node.type == 'sum'
-        return _sample_sum(node, evidence, marginalized)
+    if isinstance(node, SumNode): 
+        if evidence != Evidence():
+            return _sample_sum_cond(node, evidence, marginalized)
+        else:
+            return _sample_sum(node, evidence, marginalized)
     elif isinstance(node, ProductNode):
         return _sample_product(node, evidence, marginalized)
     elif isinstance(node, Indicator):
@@ -138,6 +141,27 @@ def _sample_recursive(node: SPN,
     else:
         raise ValueError(f"Unsupported node type: {type(node)}")
 
+def _sample_sum_cond(node: SPN,
+                     evidence: Evidence = None,
+                     marginalized: list = None):
+    """Sample from a sum node in the presence of evidence, re-weighting before
+    sampling so that the paths are sampled with probability proportional to 
+    their consistency with the evidence"""
+    # Use evidence to re-weight
+    weights = node.weights
+    child_vals = [np.exp(child.log_value(evidence)) for child in node.children]
+    weighted_child_vals = [
+        weight * val for weight, val in zip(weights, child_vals)
+    ]
+    denominator = sum(weighted_child_vals)
+    new_weights = weighted_child_vals / denominator
+
+    # Choose a child based on new weights
+    child_idx = np.random.choice(len(node.children), p=new_weights)
+    child = node.children[child_idx]
+
+    # Sample from chosen child
+    return _sample_recursive(child, evidence, marginalized)
 
 def _sample_sum(node: SPN, 
                 evidence: Evidence = None,
