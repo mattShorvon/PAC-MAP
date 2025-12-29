@@ -8,6 +8,8 @@ from spn.actions.sample import sample_multiproc, sample
 from spn.actions.likelihood import likelihood_multiproc
 from spn.actions.condition import condition_spn
 from spn.utils.evidence import Evidence
+import tempfile
+
 
 # Script that creates a toy dataset with a known data-generating process, so 
 # that we have ground truth probabilities, and tests the likelihood() and 
@@ -190,6 +192,26 @@ if __name__ == "__main__":
 
     # Debugging the sampling
     query_0 = Evidence({var_x1: [0]})
-    sample_test1 = sample(spn, num_samples=1, evidence=query_0)
-    sample_test2 = sample(spn, num_samples=1, evidence=query_0,
-                          marginalized=[var_x3])
+    spn_conditioned = condition_spn(spn, query_0)
+    with tempfile.NamedTemporaryFile(mode='wb', suffix='.spn', delete=False) as f:
+        conditioned_spn_path = Path(f.name)
+    to_file(spn_conditioned, conditioned_spn_path)
+
+    n = 10000
+    samples_x1_0_x2 = sample_multiproc(conditioned_spn_path, num_samples=n, evidence=None,
+                                       marginalized=[var_x3])
+    count_x2_1 = sum([1 if sample[var_x2] == [1] else 0 for sample in samples_x1_0_x2])
+    print(f"P(X2 = 1 | X1 = 0) according to sampling(): {count_x2_1 / len(samples_x1_0_x2)}")
+    print(f"P(X2 = 0 | X1 = 0) according to sampling(): {(n - count_x2_1) / len(samples_x1_0_x2)}")
+
+    samples_x1_0_x3 = sample_multiproc(conditioned_spn_path, num_samples=n, evidence=None,
+                                       marginalized=[var_x2])
+    count_x3_1 = sum([1 if sample[var_x3] == [1] else 0 for sample in samples_x1_0_x3])
+    print(f"P(X3 = 1 | X1 = 0) according to sampling(): {count_x3_1 / len(samples_x1_0_x3)}")
+    print(f"P(X3 = 0 | X1 = 0) according to sampling(): {(n - count_x3_1) / len(samples_x1_0_x3)}")
+
+    conditioned_spn_path.unlink()
+
+    # sample_test1 = sample(spn, num_samples=1, evidence=query_0)
+    # sample_test2 = sample(spn, num_samples=1, evidence=query_0,
+    #                       marginalized=[var_x3])

@@ -75,7 +75,12 @@ no_results_file = args.no_res_file
 results_filename = args.results_file
 datetime_str = args.date
 experiment_id = args.experiment_id
-n_jobs = int(os.environ.get('SLURM_NTASKS'))
+try:
+    n_jobs = int(os.environ.get('SLURM_NTASKS'))
+    print(f"On cluster, n_jobs set to {n_jobs}")
+except TypeError:
+    print("Not on cluster, n_jobs set to -2")
+    n_jobs = -2 
 
 print(f"Datasets: {datasets}")
 print(f"MAP methods being run: {methods}")

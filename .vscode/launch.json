@@ -35,7 +35,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "car", "-m", "PACMAP", "PACMAP-H", "--no-learn", "--data-path", "small_datasets", "-q", "0.4", "-e", "0.6", "-id", "1"],
+            "args": ["-d", "car", "-m", "PACMAP", "PACMAP-H", "--data-path", "small_datasets", "-q", "0.4", "-e", "0.6", "-id", "1"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
@@ -45,7 +45,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "mushrooms", "-m", "PACMAP", "--no-learn", "--data-path", "small_datasets", "-q", "0.4", "-e", "0.6"],
+            "args": ["-d", "mushrooms", "-m", "PACMAP", "--data-path", "small_datasets", "-q", "0.4", "-e", "0.6"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
@@ -55,7 +55,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "cwebkb", "-m", "PACMAP", "--no-learn", "--data-path", "20-datasets", "-q", "0.25", "-e", "0.75"],
+            "args": ["-d", "cwebkb", "-m", "PACMAP", "--data-path", "20-datasets", "-q", "0.25", "-e", "0.75"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
@@ -65,7 +65,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "ad", "-m", "PACMAP", "PACMAP-H", "--no-learn", "--data-path", "20-datasets", "-q", "0.25", "-e", "0.25"],
+            "args": ["-d", "ad", "-m", "PACMAP", "PACMAP-H", "--data-path", "20-datasets", "-q", "0.25", "-e", "0.25"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
@@ -75,7 +75,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-m", "MP", "AMP", "MS", "HBP", "--no-learn", "-all", "--data-path", "20-datasets", "-q", "0.4", "-e", "0.4"],
+            "args": ["-m", "MP", "AMP", "MS", "HBP", "-all", "--data-path", "20-datasets", "-q", "0.4", "-e", "0.4"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         }, 

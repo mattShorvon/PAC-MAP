@@ -9,6 +9,10 @@ from itertools import combinations
 from itertools import product
 import copy
 from pathlib import Path
+from spn.actions.condition import condition_spn
+from spn.io.file import to_file
+import time
+import os
 
 def sample_evid_to_tuple(evid):
     """Convert sample in Evidence() dictionary format to hashable tuple 
@@ -132,6 +136,27 @@ def pac_map_hamming(
         sample_cap: int = 50000, 
         n_jobs: int = -1
         ) -> Tuple[Evidence, float]:
+    
+        # Condition SPN on evidence once at the start
+    if evidence and len(evidence) > 0:
+        # Condition spn
+        conditioned_spn = condition_spn(spn, evidence, marginalized)
+        
+        # Save to temporary file for multiprocessing
+        # with tempfile.NamedTemporaryFile(mode='wb', suffix='.spn', delete=False) as f:
+        #     conditioned_spn_path = Path(f.name)
+        timestamp = int(time.time())
+        conditioned_spn_path = spn_path.parent / f"{spn_path.stem}_conditioned_{timestamp}_{os.getpid()}.spn"
+        to_file(conditioned_spn, conditioned_spn_path)
+        
+        working_path = conditioned_spn_path
+        sampling_evidence = None
+    else:
+        # No evidence, use original SPN
+        conditioned_spn_path = None
+        working_path = spn_path
+        sampling_evidence = None
+
     candidate_list = []
     probs = []
     seen_hashes = set()
@@ -140,55 +165,27 @@ def pac_map_hamming(
     p_hat = float('-inf')
     p_tick = 0
     q_hat = None
-    p_evid = spn.log_value(evidence)
 
-    while m < M:
-        # Draw new samples
-        new_samples, m = explore(spn_path, batch_size, evidence, m, marginalized, n_jobs)
+    try:
+        while m < M:
+            # Draw new samples
+            new_samples, m = explore(working_path, batch_size, sampling_evidence, m, marginalized, n_jobs)
 
-        # Add samples that haven't been seen before to candidate_list 
-        # (uses hashset for O(1) membership check)
-        unseen_samples = []
-        for sample_dict in new_samples:
-            filtered_sample = Evidence({var: vals for var, vals in sample_dict.items() 
-                                            if var not in marginalized})
-            sample_hash = sample_evid_to_tuple(filtered_sample)
-            if sample_hash not in seen_hashes:
-                seen_hashes.add(sample_hash)
-                unseen_samples.append(filtered_sample)
-                candidate_list.append(filtered_sample)
-        
-        # Compute likelihoods for new, unseen samples
-        new_probs = np.exp(
-            likelihood_multiproc(spn_path, unseen_samples, n_jobs=n_jobs) - p_evid
-        )
-        probs.extend(new_probs)
-
-        # Check if you need to update the best candidate
-        if max(probs) > p_hat:
-            p_hat = max(probs)
-            q_hat_idx = np.argmax(probs)
-            q_hat = candidate_list[q_hat_idx]
-        
-        # Search in a hamming ball around the top sample
-        new_samples = exploit(q_hat, evidence, h_radius)
-
-        # Add samples that haven't been seen before to candidate_list 
-        # (uses hashset for O(1) membership check)
-        unseen_samples = []
-        for sample_dict in new_samples:
-            filtered_sample = Evidence({var: vals for var, vals in sample_dict.items() 
-                                            if var not in marginalized})
-            sample_hash = sample_evid_to_tuple(filtered_sample)
-            if sample_hash not in seen_hashes:
-                seen_hashes.add(sample_hash)
-                unseen_samples.append(filtered_sample)
-                candidate_list.append(filtered_sample)
-        
-        # Compute likelihoods for new, unseen samples
-        if unseen_samples:
+            # Add samples that haven't been seen before to candidate_list 
+            # (uses hashset for O(1) membership check)
+            unseen_samples = []
+            for sample_dict in new_samples:
+                filtered_sample = Evidence({var: vals for var, vals in sample_dict.items() 
+                                                if var not in marginalized})
+                sample_hash = sample_evid_to_tuple(filtered_sample)
+                if sample_hash not in seen_hashes:
+                    seen_hashes.add(sample_hash)
+                    unseen_samples.append(filtered_sample)
+                    candidate_list.append(filtered_sample)
+            
+            # Compute likelihoods for new, unseen samples
             new_probs = np.exp(
-                likelihood_multiproc(spn_path, unseen_samples, n_jobs=n_jobs) - p_evid
+                likelihood_multiproc(working_path, unseen_samples, n_jobs=n_jobs)
             )
             probs.extend(new_probs)
 
@@ -197,24 +194,57 @@ def pac_map_hamming(
                 p_hat = max(probs)
                 q_hat_idx = np.argmax(probs)
                 q_hat = candidate_list[q_hat_idx]
+            
+            # Search in a hamming ball around the top sample
+            new_samples = exploit(q_hat, evidence, h_radius)
+
+            # Add samples that haven't been seen before to candidate_list 
+            # (uses hashset for O(1) membership check)
+            unseen_samples = []
+            for sample_dict in new_samples:
+                filtered_sample = Evidence({var: vals for var, vals in sample_dict.items() 
+                                                if var not in marginalized})
+                sample_hash = sample_evid_to_tuple(filtered_sample)
+                if sample_hash not in seen_hashes:
+                    seen_hashes.add(sample_hash)
+                    unseen_samples.append(filtered_sample)
+                    candidate_list.append(filtered_sample)
+            
+            # Compute likelihoods for new, unseen samples
+            if unseen_samples:
+                new_probs = np.exp(
+                    likelihood_multiproc(working_path, unseen_samples, n_jobs=n_jobs)
+                )
+                probs.extend(new_probs)
+
+                # Check if you need to update the best candidate
+                if max(probs) > p_hat:
+                    p_hat = max(probs)
+                    q_hat_idx = np.argmax(probs)
+                    q_hat = candidate_list[q_hat_idx]
+            
+            # Check if you can issue the PAC certificate, currently doing this in 
+            # prob space rather than log lik space
+            p_tick = 1 - sum(probs)
+            if p_tick <= p_hat/(1 - err_tol):
+                M = 0
+            else:
+                # M = np.log(fail_prob) / np.log((1 - p_hat)/(1 - err_tol)) wrong version
+                # M = np.log(fail_prob) / np.log(1 - (p_hat/(1 - err_tol))) correct exact version
+                M = np.log(1/fail_prob)/(p_hat/(1 - err_tol)) # correct approximate version
+            
+            # Check if the sample_cap has been hit, stop early and return current
+            # delta and epsilon pareto front if so (not sure how to return them yet)
+            if m >= sample_cap:
+                print("Sample cap reached!")
+                epsilon = np.linspace(0, 1 - p_hat - 1e-6, 200)
+                delta = (1 - p_hat / (1 - epsilon)) ** M
+                return [q_hat, p_hat]
         
-        # Check if you can issue the PAC certificate, currently doing this in 
-        # prob space rather than log lik space
-        p_tick = 1 - sum(probs)
-        if p_tick <= p_hat/(1 - err_tol):
-            M = 0
-        else:
-            # M = np.log(fail_prob) / np.log((1 - p_hat)/(1 - err_tol)) wrong version
-            # M = np.log(fail_prob) / np.log(1 - (p_hat/(1 - err_tol))) correct exact version
-            M = np.log(1/fail_prob)/(p_hat/(1 - err_tol)) # correct approximate version
-        
-        # Check if the sample_cap has been hit, stop early and return current
-        # delta and epsilon pareto front if so (not sure how to return them yet)
-        if m >= sample_cap:
-            print("Sample cap reached!")
-            epsilon = np.linspace(0, 1 - p_hat - 1e-6, 200)
-            delta = (1 - p_hat / (1 - epsilon)) ** M
-            return [q_hat, p_hat]
+    finally:
+        # Cleanup: delete temporary conditioned SPN file
+        if conditioned_spn_path is not None and conditioned_spn_path.exists():
+            conditioned_spn_path.unlink()
 
     return [q_hat, p_hat]
 

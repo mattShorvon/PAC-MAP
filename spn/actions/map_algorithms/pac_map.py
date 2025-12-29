@@ -9,6 +9,8 @@ import numpy as np
 from spn.structs import Variable
 from pathlib import Path
 import tempfile
+import time
+import os
 
 
 def pac_map(
@@ -29,8 +31,10 @@ def pac_map(
         conditioned_spn = condition_spn(spn, evidence, marginalized)
         
         # Save to temporary file for multiprocessing
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.spn', delete=False) as f:
-            conditioned_spn_path = Path(f.name)
+        # with tempfile.NamedTemporaryFile(mode='wb', suffix='.spn', delete=False) as f:
+        #     conditioned_spn_path = Path(f.name)
+        timestamp = int(time.time())
+        conditioned_spn_path = spn_path.parent / f"{spn_path.stem}_conditioned_{timestamp}_{os.getpid()}.spn"
         to_file(conditioned_spn, conditioned_spn_path)
         
         working_path = conditioned_spn_path
