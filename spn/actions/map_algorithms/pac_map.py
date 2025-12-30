@@ -22,42 +22,64 @@ def pac_map(
         err_tol: float = 0.05,
         fail_prob: float = 0.05,
         sample_cap: int = 50000,
-        n_jobs: int = -1
+        n_jobs: int = -1,
+        warm_start_cands: List[Evidence] = None,
+        warm_start_probs: List[float] = None
         ) -> Tuple[Evidence, float]:
-    
-    # Condition SPN on evidence once at the start
-    if evidence and len(evidence) > 0:
-        # Condition spn
-        conditioned_spn = condition_spn(spn, evidence, marginalized)
-        
-        # Save to temporary file for multiprocessing
-        # with tempfile.NamedTemporaryFile(mode='wb', suffix='.spn', delete=False) as f:
-        #     conditioned_spn_path = Path(f.name)
-        timestamp = int(time.time())
-        conditioned_spn_path = spn_path.parent / f"{spn_path.stem}_conditioned_{timestamp}_{os.getpid()}.spn"
-        to_file(conditioned_spn, conditioned_spn_path)
-        
-        working_path = conditioned_spn_path
-        sampling_evidence = None
-    else:
-        # No evidence, use original SPN
-        conditioned_spn_path = None
-        working_path = spn_path
-        sampling_evidence = None
-    
-    candidate_list = []
-    probs = []
-    seen_hashes = set()
-    m = 0
-    M = float('inf')
-    p_hat = float('-inf')
-    p_tick = 0
-    q_hat = None
     
     def sample_evid_to_tuple(evid):
         """Convert sample in Evidence() dictionary format to hashable tuple 
         (assumes 1 val per variable)."""
-        return tuple(sorted((var.id, vals[0]) for var, vals in evid.items())) 
+        return tuple(sorted((var.id, vals[0]) for var, vals in evid.items()))
+    
+    # Validate warm start inputs
+    if warm_start_cands:
+        assert warm_start_probs, (
+            "If you are providing warm-start candidates, "
+            "you need to provide their probabilities too"
+        )
+        assert len(warm_start_cands) == len(warm_start_probs), (
+            "The list of warm start candidates has to be the same length "
+            "as the list of their probabilities"
+        )
+    
+    # Condition SPN on evidence once at the start
+    if evidence and len(evidence) > 0:
+        conditioned_spn = condition_spn(spn, evidence, marginalized)
+        timestamp = int(time.time())
+        conditioned_spn_path = spn_path.parent / f"{spn_path.stem}_conditioned_{timestamp}_{os.getpid()}.spn"
+        to_file(conditioned_spn, conditioned_spn_path)
+        working_path = conditioned_spn_path
+        sampling_evidence = None
+    else:
+        conditioned_spn_path = None
+        working_path = spn_path
+        sampling_evidence = None
+    
+    # Initialize with warm start if you've given one
+    candidate_list = list(warm_start_cands) if warm_start_cands else []
+    probs = list(warm_start_probs) if warm_start_probs else []
+    seen_hashes = set()
+    
+    # Add warm_start candidates to the set of seen samples 
+    if warm_start_cands:
+        for cand in warm_start_cands:
+            sample_hash = sample_evid_to_tuple(cand)  
+            seen_hashes.add(sample_hash)
+    
+    # Initialize p_hat and q_hat
+    if len(probs) > 0:
+        p_hat = max(probs)
+        q_hat_idx = np.argmax(probs)
+        q_hat = candidate_list[q_hat_idx]
+    else:
+        p_hat = float('-inf')
+        q_hat = None
+    
+    # Initialise m, p_tick and M
+    p_tick = 0
+    m = 0
+    M = float('inf')
 
     try:
         while m < M:

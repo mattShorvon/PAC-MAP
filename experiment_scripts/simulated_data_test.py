@@ -20,8 +20,9 @@ if __name__ == "__main__":
     n = 1000
     create_new_data = False
     learn = False
-    test_likelihood = False
+    test_likelihood = True
     test_sampling = False
+    test_cond_sampling = True
     vals = [0, 1]
     p_x1 = 0.7
     path = "test_inputs/toy_data/toy_data.train.data"
@@ -190,28 +191,54 @@ if __name__ == "__main__":
         print(f"P(X3 = 1 | X1 = 0) according to sampling(): {count_x3_1 / len(samples_x1_0_x3)}")
         print(f"P(X3 = 0 | X1 = 0) according to sampling(): {(n - count_x3_1) / len(samples_x1_0_x3)}")
 
-    # Debugging the sampling
-    query_0 = Evidence({var_x1: [0]})
-    spn_conditioned = condition_spn(spn, query_0)
-    with tempfile.NamedTemporaryFile(mode='wb', suffix='.spn', delete=False) as f:
-        conditioned_spn_path = Path(f.name)
-    to_file(spn_conditioned, conditioned_spn_path)
+    if test_cond_sampling:
+        # Print out the likelihood() probs for comparison
+        print(f"P(X2 = 1 | X1 = 1) according to likelihood(): {ans1}")
+        print(f"P(X2 = 0 | X1 = 1) according to likelihood(): {ans2}")
+        print(f"P(X3 = 1 | X1 = 1) according to likelihood(): {ans5}")
+        print(f"P(X3 = 0 | X1 = 1) according to likelihood(): {ans6}")
+        print(f"P(X2 = 1 | X1 = 0) according to likelihood(): {ans3}")
+        print(f"P(X2 = 0 | X1 = 0) according to likelihood(): {ans4}")
+        print(f"P(X3 = 1 | X1 = 0) according to likelihood(): {ans7}")
+        print(f"P(X3 = 0 | X1 = 0) according to likelihood(): {ans8}")
+        
+        # Test the sampling probabilities when X1 = 1
+        n = 100000
+        query_1 = Evidence({var_x1: [1]})
+        spn_conditioned = condition_spn(spn, query_1)
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.spn', delete=False) as f:
+            conditioned_spn_path = Path(f.name)
+        to_file(spn_conditioned, conditioned_spn_path)
 
-    n = 10000
-    samples_x1_0_x2 = sample_multiproc(conditioned_spn_path, num_samples=n, evidence=None,
-                                       marginalized=[var_x3])
-    count_x2_1 = sum([1 if sample[var_x2] == [1] else 0 for sample in samples_x1_0_x2])
-    print(f"P(X2 = 1 | X1 = 0) according to sampling(): {count_x2_1 / len(samples_x1_0_x2)}")
-    print(f"P(X2 = 0 | X1 = 0) according to sampling(): {(n - count_x2_1) / len(samples_x1_0_x2)}")
+        samples_x1_1_x2 = sample_multiproc(conditioned_spn_path, num_samples=n, evidence=query_1, 
+                                        marginalized=[var_x3])
+        count_x2_1 = sum([1 if sample[var_x2] == [1] else 0 for sample in samples_x1_1_x2])
+        print(f"P(X2 = 1 | X1 = 1) according to sampling(): {count_x2_1 / len(samples_x1_1_x2)}")
+        print(f"P(X2 = 0 | X1 = 1) according to sampling(): {(n - count_x2_1) / len(samples_x1_1_x2)}")
 
-    samples_x1_0_x3 = sample_multiproc(conditioned_spn_path, num_samples=n, evidence=None,
-                                       marginalized=[var_x2])
-    count_x3_1 = sum([1 if sample[var_x3] == [1] else 0 for sample in samples_x1_0_x3])
-    print(f"P(X3 = 1 | X1 = 0) according to sampling(): {count_x3_1 / len(samples_x1_0_x3)}")
-    print(f"P(X3 = 0 | X1 = 0) according to sampling(): {(n - count_x3_1) / len(samples_x1_0_x3)}")
+        samples_x1_1_x3 = sample_multiproc(conditioned_spn_path, num_samples=n, evidence=query_1, 
+                                        marginalized=[var_x2])
+        count_x3_1 = sum([1 if sample[var_x3] == [1] else 0 for sample in samples_x1_1_x3])
+        print(f"P(X3 = 1 | X1 = 1) according to sampling(): {count_x3_1 / len(samples_x1_1_x3)}")
+        print(f"P(X3 = 0 | X1 = 1) according to sampling(): {(n - count_x3_1) / len(samples_x1_1_x3)}")
+        conditioned_spn_path.unlink()
 
-    conditioned_spn_path.unlink()
+        # Test the sampling probabilities when X1 = 0
+        query_0 = Evidence({var_x1: [0]})
+        spn_conditioned = condition_spn(spn, query_0)
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.spn', delete=False) as f:
+            conditioned_spn_path = Path(f.name)
+        to_file(spn_conditioned, conditioned_spn_path)
 
-    # sample_test1 = sample(spn, num_samples=1, evidence=query_0)
-    # sample_test2 = sample(spn, num_samples=1, evidence=query_0,
-    #                       marginalized=[var_x3])
+        samples_x1_0_x2 = sample_multiproc(conditioned_spn_path, num_samples=n, evidence=None,
+                                        marginalized=[var_x3])
+        count_x2_1 = sum([1 if sample[var_x2] == [1] else 0 for sample in samples_x1_0_x2])
+        print(f"P(X2 = 1 | X1 = 0) according to sampling(): {count_x2_1 / len(samples_x1_0_x2)}")
+        print(f"P(X2 = 0 | X1 = 0) according to sampling(): {(n - count_x2_1) / len(samples_x1_0_x2)}")
+
+        samples_x1_0_x3 = sample_multiproc(conditioned_spn_path, num_samples=n, evidence=None,
+                                        marginalized=[var_x2])
+        count_x3_1 = sum([1 if sample[var_x3] == [1] else 0 for sample in samples_x1_0_x3])
+        print(f"P(X3 = 1 | X1 = 0) according to sampling(): {count_x3_1 / len(samples_x1_0_x3)}")
+        print(f"P(X3 = 0 | X1 = 0) according to sampling(): {(n - count_x3_1) / len(samples_x1_0_x3)}")
+        conditioned_spn_path.unlink()
