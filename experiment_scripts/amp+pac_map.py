@@ -43,7 +43,7 @@ data_path = args.data_path
 datasets = args.datasets
 q_percent = args.q_percent
 e_percent = args.e_percent
-experiment_id = args.id
+experiment_id = args.experiment_id
 datetime_str = args.date
 no_results_file = args.no_res_file
 results_filename = args.results_file
@@ -100,6 +100,7 @@ for dataset in datasets:
         amp_est, _ = argmax_product_with_evidence_and_marginalized(
             spn, e, m
         )
+        amp_est = Evidence({var: vals for var, vals in amp_est.items() if var not in m})
         amp_prob = spn.log_value(amp_est) - p_evid
         amp_prob = np.exp(amp_prob)
         pac_map_est, pac_map_prob = pac_map(

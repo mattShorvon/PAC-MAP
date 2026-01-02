@@ -118,6 +118,16 @@
             "args": ["-q", "0.1", "-e", "0.1", "-dp", "20-datasets", "-d", "accidents", "-bs", "2", "4", "8", "16", "32"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
-        }
+        },
+        {
+            "name":"Python: amp+pac_map.py with nltcs",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiment_scripts/amp+pac_map.py",
+            "console": "integratedTerminal",
+            "args": ["-d", "nltcs", "--data-path", "20-datasets", "-q", "0.1", "-e", "0.9"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        },
     ]
 }
