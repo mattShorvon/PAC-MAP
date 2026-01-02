@@ -35,7 +35,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "car", "-m", "PACMAP", "PACMAP-H", "--data-path", "small_datasets", "-q", "0.4", "-e", "0.6", "-id", "1"],
+            "args": ["-d", "car", "-m", "IND", "PACMAP", "PACMAP-H", "--data-path", "small_datasets", "-q", "0.4", "-e", "0.6", "-id", "1"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },

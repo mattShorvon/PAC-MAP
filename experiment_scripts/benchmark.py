@@ -7,6 +7,7 @@ from spn.io.file import from_file
 from spn.actions.learn import Learn
 from spn.learn import gens
 from spn.data.partitioned_data import PartitionedData
+from spn.actions.map_algorithms.independent_map import independent_map
 from spn.actions.map_algorithms.max_product import (
     max_product_with_evidence_and_marginals,
 )
@@ -130,6 +131,24 @@ for dataset in datasets:
         print("Marginalized:", ' '.join([f"{v.id}({v.n_categories})" for v in m ]))
         print()
         run_success = True
+        if "IND" in methods:
+            start = time.perf_counter()
+            baseline_est, baseline_prob = independent_map(
+                spn, spn_path, e, p_evid, m, n_jobs=n_jobs
+            )
+            baseline_time = time.perf_counter() - start
+            results.append({
+                "Date": datetime_str,
+                "Dataset": dataset,
+                "Query": str([query.id for query in q]),
+                "Method": "Independent",
+                "MAP Estimate": str({var.id: baseline_est[var] for var in q}),
+                "MAP Probability": baseline_prob,
+                "Runtime": baseline_time
+            })
+            print(f"Baseline:           {baseline_prob:.4g}")
+            print("Baseline Est:", ' '.join([str(baseline_est[v]) for v in q]))
+            print()
         if "MP" in methods:
             start = time.perf_counter()
             mp_est_full, _ = max_product_with_evidence_and_marginals(
