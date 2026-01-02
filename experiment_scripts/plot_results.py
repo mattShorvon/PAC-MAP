@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import argparse
 from pathlib import Path
+from spn.io.file import from_file
 
 parser = argparse.ArgumentParser(description='MAP Benchmark Results Plotter')
 parser.add_argument('-q', '--q-percent', type=float, default=0.1,
@@ -50,6 +51,21 @@ results_wide = results.pivot(
     values=['Mean_MAP_Probability', 'Std_MAP_Probability']
 )
 
+# Find dimensionality of each dataset
+script_dir = Path(__file__).parent
+project_root = script_dir.parent
+dataset_path = project_root / Path(dataset_name)
+dataset_info = []
+for spn_file in dataset_path.glob('*/*0.4q_0.6e.spn'):
+    spn = from_file(spn_file)
+    dataset_info.append({
+        'Dataset': spn_file.parent.name,
+        'Dimension': spn.vars(),
+        'SPN Arcs': spn.arcs(),
+        'SPN Nodes': spn.nodes()
+    })
+dim_df = pd.DataFrame(dataset_info)
+
 # Produce summary of results based on ranks of each method's prob
 def find_all_ranking(row):
     """
@@ -90,6 +106,7 @@ for method in results['Method'].unique():
 # Keep only the combined columns
 results_wide = results_wide[[method for method in results['Method'].unique()]]
 results_wide = results_wide.reset_index()
+results_wide = results_wide.merge(dim_df, on='Dataset', how='left')
 
 # Get the runtime results
 runtime_results = all_results.groupby(['Dataset', 'Method'])['Runtime'].agg(
@@ -157,6 +174,7 @@ summary = pd.concat([
 ])
 
 # Save the results to csvs
+print(results_wide)
 print(summary)
 if args.date:
     datetime_folder = Path('results') / datetime_str
