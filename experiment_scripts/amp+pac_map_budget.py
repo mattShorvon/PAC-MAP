@@ -105,7 +105,7 @@ for dataset in datasets:
         amp_prob = np.exp(amp_prob)
         pac_map_est, pac_map_prob = pac_map(
             spn, spn_path, e, m, batch_size=5000, err_tol=0.01, fail_prob=0.01,
-            sample_cap=100000, n_jobs=n_jobs, warm_start_cands=[amp_est], 
+            sample_cap=50000, n_jobs=n_jobs, warm_start_cands=[amp_est], 
             warm_start_probs=[amp_prob]
         )
         results.append({
