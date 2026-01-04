@@ -7,12 +7,14 @@ from spn.io.file import from_file
 from spn.actions.map_algorithms.argmax_product import (
     argmax_product_with_evidence_and_marginalized,
 )
+from spn.actions.map_algorithms.pac_map_budget import pac_map_budget
 from spn.actions.map_algorithms.pac_map import pac_map
 from spn.actions.map_algorithms.pac_map_hammingdist import pac_map_hamming
 from spn.utils.evidence import Evidence
 import argparse
 from datetime import datetime
 import time
+import matplotlib.pyplot as plt
 
 # Parse input args and initialise variables
 parser = argparse.ArgumentParser(description="Amp+pac_map experiments params")
@@ -21,6 +23,8 @@ parser.add_argument('-dp', '--data-path', default='test_inputs',
                     'queries and evidence in them')
 parser.add_argument('-d', '--datasets', nargs='+',
                     help='Dataset names separated by space (e.g., iris nltcs)')
+parser.add_argument('-m', '--budgets', nargs="+", 
+                    help='List of sample budgets to give to pac_map_budget')
 parser.add_argument('-q', '--q-percent', type=float, required=True,
                     help="Proportion of query variables")
 parser.add_argument('-e', '--e-percent', type=float, required=True,
@@ -34,13 +38,14 @@ parser.add_argument('-dt', '--date',
 parser.add_argument('--no-res-file', action="store_true",
                     help="No single file to write the results to, will write" \
                     "to many individual files in each dataset's subfolder instead")
-parser.add_argument('--results-file', default='amp+pacmap_results.csv',
+parser.add_argument('--results-file', default='amp+pacmap_budget_results.csv',
                     help='Path to file to store results in, if storing in ' \
                     'a single results file')
 
 args = parser.parse_args()
 data_path = args.data_path
 datasets = args.datasets
+budgets = [int(budget) for budget in args.budgets]
 q_percent = args.q_percent
 e_percent = args.e_percent
 experiment_id = args.experiment_id
@@ -93,30 +98,48 @@ for dataset in datasets:
     # Loop throught the evidence and query pairs
     results = []
     for q, e in zip(queries, evidences):
-        print("Query       :", ' '.join([f"{v.id}" for v in q ]))
-        print("Evidence    :", e)
-        m = [var for var in spn.scope() if var not in q and var not in e]
-        p_evid = spn.log_value(e)
-        amp_est, _ = argmax_product_with_evidence_and_marginalized(
-            spn, e, m
-        )
-        amp_est = Evidence({var: vals for var, vals in amp_est.items() if var not in m})
-        amp_prob = spn.log_value(amp_est) - p_evid
-        amp_prob = np.exp(amp_prob)
-        pac_map_est, pac_map_prob = pac_map(
-            spn, spn_path, e, m, batch_size=5000, err_tol=0.01, fail_prob=0.01,
-            sample_cap=50000, n_jobs=n_jobs, warm_start_cands=[amp_est], 
-            warm_start_probs=[amp_prob]
-        )
-        results.append({
-            "Date": datetime_str,
-            "Dataset": dataset,
-            "Query": ' '.join([f"{v.id}" for v in q ]),
-            "AMP Prob": amp_prob,
-            "PAC-MAP Prob": pac_map_prob
-        })
-        print(f"AMP prob: {amp_prob}")
-        print(f"PAC-MAP prob: {pac_map_prob}")
+        for budget in budgets:
+            print("Query       :", ' '.join([f"{v.id}" for v in q ]))
+            print("Evidence    :", e)
+            m = [var for var in spn.scope() if var not in q and var not in e]
+            p_evid = spn.log_value(e)
+            amp_est, _ = argmax_product_with_evidence_and_marginalized(
+                spn, e, m
+            )
+            amp_est = Evidence({var: vals for var, vals in amp_est.items() if var not in m})
+            amp_prob = spn.log_value(amp_est) - p_evid
+            amp_prob = np.exp(amp_prob)
+            pac_map_est, pac_map_prob, epsilon, delta = pac_map_budget(
+                spn, spn_path, e, m, m=budget, n_jobs=n_jobs, 
+                warm_start_cands=[amp_est], warm_start_probs=[amp_prob]
+            )
+
+            # Plot epsilon vs delta
+            plt.figure(figsize=(10, 6))
+            plt.plot(epsilon, delta, linewidth=2)
+            plt.xlabel('Epsilon (ε)', fontsize=12)
+            plt.ylabel('Delta (δ)', fontsize=12)
+            plt.title(f'PAC Certificate: {dataset}, Budget={budget}', fontsize=14)
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            
+            # Save the plot
+            plot_path = Path(data_path) / dataset / f"pac_cert_budget{budget}_{time.time()}.png"
+            plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f"Saved plot to {plot_path}")
+
+
+            results.append({
+                "Date": datetime_str,
+                "Dataset": dataset,
+                "Query": ' '.join([f"{v.id}" for v in q ]),
+                "Budget": budget,
+                "AMP Prob": amp_prob,
+                "PAC-MAP Prob": pac_map_prob
+            })
+            print(f"AMP prob: {amp_prob}")
+            print(f"PAC-MAP prob: {pac_map_prob}")
 
     results_dt = pd.DataFrame(results)
     if no_results_file is False:

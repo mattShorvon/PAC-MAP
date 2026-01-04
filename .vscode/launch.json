@@ -129,5 +129,15 @@
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
+        {
+            "name":"Python: amp+pac_map_budget.py with jester",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiment_scripts/amp+pac_map_budget.py",
+            "console": "integratedTerminal",
+            "args": ["-d", "jester", "--data-path", "20-datasets", "-q", "0.1", "-e", "0.9", "-m", "1000"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        },
     ]
 }

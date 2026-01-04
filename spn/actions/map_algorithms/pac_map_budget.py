@@ -106,7 +106,7 @@ def pac_map_budget(
         
         # Calculate pairs of values for epsilon and delta
         epsilon = np.linspace(0, 1 - p_hat - 1e-6, 200)
-        delta = (1 - p_hat / (1 - epsilon)) ** M
+        delta = (1 - p_hat / (1 - epsilon)) ** m
 
     finally:
         # Cleanup: delete temporary conditioned SPN file
