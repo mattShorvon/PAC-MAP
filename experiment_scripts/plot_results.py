@@ -72,11 +72,18 @@ def find_all_ranking(row):
     Find method's rankings based on their Mean_MAP_Probability for each
     dataset.
     """
-    # Round to avoid floating point comparison issues
-    mean_probs = row['Mean_MAP_Probability'].round(10)
-
+    mean_probs = row['Mean_MAP_Probability']
+    
+    # Use log probabilities for better numerical stability with small values
+    # Add small epsilon to avoid log(0)
+    log_probs = np.log(mean_probs + 1e-300)
+    
+    # Round in log space to 10 decimal places
+    log_probs_rounded = log_probs.round(10)
+    
     # Rank with method='min' gives same rank to ties
-    ranks = mean_probs.rank(method='min', ascending=False)
+    # Higher log prob = higher rank (ascending=False)
+    ranks = log_probs_rounded.rank(method='min', ascending=False)
     return ranks.values.tolist()
 
 results_wide['All_Ranks'] = results_wide.apply(find_all_ranking, axis=1)
@@ -108,7 +115,7 @@ results_wide = results_wide[[method for method in results['Method'].unique()]]
 results_wide = results_wide.reset_index()
 results_wide = results_wide.merge(dim_df, on='Dataset', how='left')
 results_wide.drop(columns='Dataset', inplace=True)
-results_wide['Times Sample_Cap Reached'] = [8, 0, 10, 10, 10, 0, 10, 10, 0, 10, 0, 10, 0, 10, 0, 10, 1, 2, 10, 0]
+results_wide['Times Sample_Cap Reached'] = [7, 0, 10, 10, 10, 0, 10, 10, 0, 10, 0, 10, 0, 10, 0, 10, 0, 1, 10, 0]
 
 # Get the runtime results
 runtime_results = all_results.groupby(['Dataset', 'Method'])['Runtime'].agg(

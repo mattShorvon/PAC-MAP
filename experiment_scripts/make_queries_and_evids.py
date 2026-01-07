@@ -75,7 +75,7 @@ for dataset in datasets:
 
     # Load the spn, to be used for making sure the random evidence is not 0 prob
     try:
-        spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
+        spn = from_file(Path(f"{data_path}/{dataset}/{dataset}_0.1q_0.9e.spn"))
         print(f"SPN loaded: {spn.vars()} vars and {spn.arcs()} arcs")
     except FileNotFoundError as error:
         print(".spn file not found, check the file path or that the spn exists")
