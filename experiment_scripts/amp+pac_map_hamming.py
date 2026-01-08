@@ -20,6 +20,10 @@ parser.add_argument('-dp', '--data-path', default='test_inputs',
                     'queries and evidence in them')
 parser.add_argument('-d', '--datasets', nargs='+',
                     help='Dataset names separated by space (e.g., iris nltcs)')
+parser.add_argument('-all','--all-datasets', action='store_true',
+                    help="Iterate through all dataset folders" \
+                    "(containing queries, evidences and spns) in the specified"\
+                    "data path, or just use specific ones?")
 parser.add_argument('-q', '--q-percent', type=float, required=True,
                     help="Proportion of query variables")
 parser.add_argument('-e', '--e-percent', type=float, required=True,
@@ -39,7 +43,13 @@ parser.add_argument('--results-file', default='amp+pacmap_h_results.csv',
 
 args = parser.parse_args()
 data_path = args.data_path
-datasets = args.datasets
+use_all = args.all_datasets
+if use_all:
+    datasets = sorted(
+        [folder.name for folder in os.scandir(data_path) if folder.is_dir()]
+    )
+else:
+    datasets = args.datasets
 q_percent = args.q_percent
 e_percent = args.e_percent
 experiment_id = args.experiment_id
@@ -119,6 +129,8 @@ for dataset in datasets:
         print(f"PAC-MAP prob: {pac_map_prob}")
 
     results_dt = pd.DataFrame(results)
+    if experiment_id:
+        results_dt['Experiment ID'] = experiment_id
     if no_results_file is False:
         file_exists = os.path.isfile(results_filename)
         results_dt.to_csv(results_filename, mode='a', header=not file_exists, index=False)

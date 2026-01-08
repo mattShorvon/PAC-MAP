@@ -115,7 +115,7 @@ results_wide = results_wide[[method for method in results['Method'].unique()]]
 results_wide = results_wide.reset_index()
 results_wide = results_wide.merge(dim_df, on='Dataset', how='left')
 results_wide.drop(columns='Dataset', inplace=True)
-results_wide['Times Sample_Cap Reached'] = [7, 0, 10, 10, 10, 0, 10, 10, 0, 10, 0, 10, 0, 10, 0, 10, 0, 1, 10, 0]
+# results_wide['Times Sample_Cap Reached'] = [7, 0, 10, 10, 10, 0, 10, 10, 0, 10, 0, 10, 0, 10, 0, 10, 0, 1, 10, 0]
 
 # Get the runtime results
 runtime_results = all_results.groupby(['Dataset', 'Method'])['Runtime'].agg(
