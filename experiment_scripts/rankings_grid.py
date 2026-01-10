@@ -17,6 +17,9 @@ assert args.experiment_ids, (
 )
 exp_ids = args.experiment_ids
 all_results = all_results[all_results["Experiment ID"].isin(exp_ids)]
+all_results = all_results.sort_values(
+        ['Experiment ID', 'Dataset', 'Query']
+    ).reset_index(drop=True)
 
 average_rank_roundprob = True
 average_rank_mapest = True
@@ -193,6 +196,7 @@ if average_rank_mapest:
             
             # Rank the unique estimates
             log_probs = np.log(estimate_probs + 1e-300)
+            log_probs = log_probs.round(12)
             estimate_ranks = log_probs.rank(method='min', ascending=False)
             
             # Map ranks back to each row
