@@ -218,6 +218,7 @@ tags
 *.xls
 *.png
 *.out
+*.tex
 
 # bash files
 *.submit

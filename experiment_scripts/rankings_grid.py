@@ -5,6 +5,82 @@ from pathlib import Path
 from spn.io.file import from_file
 from datetime import datetime
 
+def get_method_colors():
+    """Define colors for each method."""
+    return {
+        'ArgMax Product': 'blue',
+        'Independent':'purple',
+        'Max Product': 'red',
+        'PAC_MAP': 'green',
+        'PAC_MAP_Hamming': 'orange'
+    }
+
+def format_rank_list_with_colors(rank_list, method_order):
+    """Format list of ranks with LaTeX colors."""
+    if rank_list is None or (isinstance(rank_list, float) and np.isnan(rank_list)):
+        return '-'
+    
+    method_colors = get_method_colors()
+    formatted = []
+    
+    for i, rank in enumerate(rank_list):
+        if rank is None:
+            formatted.append('-')
+        else:
+            method = method_order[i]
+            color = method_colors.get(method, 'black')
+            # Format: \textcolor{blue}{1.0}
+            formatted.append(f"\\textcolor{{{color}}}{{{rank:.1f}}}")
+    
+    return ', '.join(formatted)
+
+def create_colored_latex_table(rankings_df, method_order, caption, label):
+    r"""
+    Create LaTeX table with colored ranks.
+    Requires \usepackage{xcolor} and \usepackage{tabularx} in your LaTeX document.
+    """
+    rankings_df_formatted = rankings_df.copy()
+    
+    # Format each experiment column with colors
+    exp_columns = [col for col in rankings_df.columns if col != 'Dataset']
+    for col in exp_columns:
+        rankings_df_formatted[col] = rankings_df_formatted[col].apply(
+            lambda x: format_rank_list_with_colors(x, method_order)
+        )
+    
+    # Build LaTeX manually with tabularx for wrapping
+    latex_str = r"\begin{table}[ht]" + "\n"
+    latex_str += r"\centering" + "\n"
+    latex_str += f"\\caption{{{caption}}}\n"
+    latex_str += f"\\label{{{label}}}\n"
+    latex_str += r"\begin{tabularx}{\textwidth}{l|XXX}" + "\n"
+    latex_str += r"\toprule" + "\n"
+    
+    # Header
+    latex_str += "Dataset & 10\\% Query & 25\\% Query & 50\\% Query \\\\\n"
+    latex_str += r"\midrule" + "\n"
+    
+    # Data rows
+    for _, row in rankings_df_formatted.iterrows():
+        dataset = row['Dataset']
+        vals = [str(row[col]) for col in exp_columns]
+        latex_str += f"{dataset} & {' & '.join(vals)} \\\\\n"
+    
+    latex_str += r"\bottomrule" + "\n"
+    latex_str += r"\end{tabularx}" + "\n"
+    latex_str += r"\end{table}" + "\n"
+    
+    # Add package requirements at the top
+    latex_note = r"% Requires \usepackage{xcolor} and \usepackage{tabularx} in your LaTeX preamble" + "\n"
+    
+    # Add legend
+    method_colors = get_method_colors()
+    legend = "\n% Legend:\n"
+    for method, color in method_colors.items():
+        legend += f"% {method}: \\textcolor{{{color}}}{{colored}}\n"
+    
+    return latex_note + legend + "\n" + latex_str
+
 parser = argparse.ArgumentParser(description='MAP Benchmark Results Plotter')
 parser.add_argument('-ids', '--experiment-ids', nargs='+',
     help='IDs of experiment results that you want to be included in the table')
@@ -21,7 +97,7 @@ all_results = all_results.sort_values(
         ['Experiment ID', 'Dataset', 'Query']
     ).reset_index(drop=True)
 
-average_rank_roundprob = True
+average_rank_roundprob = False
 average_rank_mapest = True
 rank_of_avg_prob = False
 num_methods = len(all_results['Method'].unique())
@@ -258,3 +334,25 @@ if average_rank_mapest:
         Path('results') / f'benchmark_rankings_avg_{datetime_str}.csv',
         index=False
     )
+
+    # Convert to LaTeX
+    # Create colored LaTeX table
+    latex_table = create_colored_latex_table(
+        rankings_df,
+        method_order,
+        caption='Average ranking of methods by MAP estimate',
+        label='tab:rankings_mapest'
+    )
+    
+    print("\n" + "="*80)
+    print("LATEX TABLE (Average Rank - MAP Estimate) - WITH COLORS:")
+    print("="*80)
+    print(latex_table)
+    print("="*80 + "\n")
+    print(f"Method order and colors:")
+    for method, color in get_method_colors().items():
+        print(f"  {method}: {color}")
+
+    # Save to file
+    with open(Path('results') / f'benchmark_rankings_avg_{datetime_str}.tex', 'w') as f:
+        f.write(latex_table)
