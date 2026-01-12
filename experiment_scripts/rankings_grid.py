@@ -58,6 +58,7 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     # Build LaTeX manually with tabularx for wrapping
     latex_str = r"\begin{table}[ht]" + "\n"
     latex_str += r"\centering" + "\n"
+    latex_str += r"\small" + "\n"  # font size
     latex_str += f"\\caption{{{caption}}}\n"
     latex_str += f"\\label{{{label}}}\n"
     latex_str += r"\begin{tabularx}{\textwidth}{l|XXX}" + "\n"
@@ -71,7 +72,8 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     for _, row in rankings_df_formatted.iterrows():
         dataset = row['Dataset']
         vals = [str(row[col]) for col in exp_columns]
-        latex_str += f"{dataset} & {' & '.join(vals)} \\\\\n"
+        latex_str += r"\texttt{" + f"{dataset}" + r"} & " + ' & '.join(vals) + r" \\" + "\n"
+
     
     latex_str += r"\bottomrule" + "\n"
     latex_str += r"\end{tabularx}" + "\n"
@@ -163,7 +165,7 @@ ranks_aggregated = ranks_by_map_est.groupby(
     ["Experiment ID", "Dataset", "Method"]
 ).agg({"Rank": 'mean'}).reset_index()
 
-# Create rankings grid manually with sorted (rank, method) tuples
+# Create rankings grid manually - alphabetical order
 method_order = sorted(all_results['Method'].unique())
 rankings_per_cell = []
 
@@ -181,21 +183,15 @@ for dataset in ranks_aggregated['Dataset'].unique():
             row_data[exp_id] = None
             continue
         
-        # Create list of (rank, method) tuples
+        # Create list of ranks in alphabetical method order
         subset_indexed = subset.set_index('Method')
-        ranks_with_methods = [
-            (subset_indexed.loc[method, 'Rank'], method) 
+        ranks_list = [
+            subset_indexed.loc[method, 'Rank'] 
             if method in subset_indexed.index else None
             for method in method_order
         ]
         
-        # Filter out None values and sort by rank (ascending order)
-        ranks_with_methods = sorted(
-            [r for r in ranks_with_methods if r is not None],
-            key=lambda x: x[0]
-        )
-        
-        row_data[exp_id] = ranks_with_methods
+        row_data[exp_id] = ranks_list
     
     rankings_per_cell.append(row_data)
 
