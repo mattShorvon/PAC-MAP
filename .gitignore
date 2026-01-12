@@ -219,6 +219,7 @@ tags
 *.png
 *.out
 *.tex
+*.pdf
 
 # bash files
 *.submit
