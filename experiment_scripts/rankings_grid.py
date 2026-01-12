@@ -75,6 +75,16 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     
     latex_str += r"\bottomrule" + "\n"
     latex_str += r"\end{tabularx}" + "\n"
+
+    # Legend
+    latex_str += r"\begin{center}" + "\n" 
+    latex_str += r"\footnotesize" + "\n" 
+    latex_str += r"\textcolor{blue}{ArgMax Product} \quad" + "\n"
+    latex_str += r"\textcolor{purple}{Independent} \quad" + "\n"
+    latex_str += r"\textcolor{red}{Max Product} \quad" + "\n"
+    latex_str += r"\textcolor{olive}{PAC\_MAP} \quad" + "\n"
+    latex_str += r"\textcolor{orange}{PAC\_MAP\_Hamming}" + "\n"
+    latex_str += r"\end{center}" + "\n"
     latex_str += r"\end{table}" + "\n"
     
     # Add package requirements at the top
