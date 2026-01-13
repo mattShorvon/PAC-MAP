@@ -6,13 +6,14 @@ from spn.io.file import from_file
 from datetime import datetime
 
 def get_method_colors():
-    """Define colors for each method."""
+    """Define colors for each method using ggsci NPG palette."""
+    # NPG (Nature Publishing Group) palette from ggsci
     return {
-        'ArgMax Product': 'blue',
-        'Independent': 'purple',
-        'Max Product': 'red',
-        'PAC_MAP': 'olive',
-        'PAC_MAP_Hamming': 'orange'
+        'ArgMax Product': 'npgRed',      # #E64B35
+        'Independent': 'npgPurple',      # #8491B4
+        'Max Product': 'npgBlue',        # #4DBBD5
+        'PAC_MAP': 'npgGreen',           # #00A087
+        'PAC_MAP_Hamming': 'npgNavy'     # #3C5488
     }
 
 
@@ -30,12 +31,13 @@ def format_rank_list_with_colors(rank_list, method_order=None):
     method_colors = get_method_colors()
     formatted = []
     
-    # Handle list of (rank, method) tuples
-    for rank, method in rank_list:
+    # Handle list of ranks
+    for i, rank in enumerate(rank_list):
         if rank is None:
             formatted.append('-')
         else:
-            color = method_colors.get(method, 'black')
+            method = method_order[i] if i < len(method_order) else None
+            color = method_colors.get(method, 'black') if method else 'black'
             # Format: \textcolor{blue}{1.0}
             formatted.append(f"\\textcolor{{{color}}}{{{rank:.1f}}}")
     
@@ -49,52 +51,73 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     rankings_df_formatted = rankings_df.copy()
     
     # Format each experiment column with colors
-    exp_columns = [col for col in rankings_df.columns if col != 'Dataset']
-    for col in exp_columns:
+    colour_columns = [col for col in rankings_df.columns if col != 'Dataset' and col != 'Dimension']
+    val_columns = [col for col in rankings_df.columns if col != 'Dataset']
+    for col in colour_columns:
         rankings_df_formatted[col] = rankings_df_formatted[col].apply(
             lambda x: format_rank_list_with_colors(x, method_order)
         )
     
     # Build LaTeX manually with tabularx for wrapping
-    latex_str = r"\begin{table}[ht]" + "\n"
+    latex_str = r"\begin{table*}[ht]" + "\n"
     latex_str += r"\centering" + "\n"
-    latex_str += r"\small" + "\n"  # font size
+    latex_str += r"\footnotesize" + "\n"
     latex_str += f"\\caption{{{caption}}}\n"
     latex_str += f"\\label{{{label}}}\n"
-    latex_str += r"\begin{tabularx}{\textwidth}{l|XXX}" + "\n"
+    
+    # Define ggsci NPG colors
+    latex_str += r"% Define ggsci NPG palette colors" + "\n"
+    latex_str += r"\definecolor{npgRed}{HTML}{E64B35}" + "\n"
+    latex_str += r"\definecolor{npgBlue}{HTML}{4DBBD5}" + "\n"
+    latex_str += r"\definecolor{npgGreen}{HTML}{00A087}" + "\n"
+    latex_str += r"\definecolor{npgNavy}{HTML}{3C5488}" + "\n"
+    latex_str += r"\definecolor{npgPurple}{HTML}{8491B4}" + "\n"
+    latex_str += r"\definecolor{npgOrange}{HTML}{F39B7F}" + "\n"
+    latex_str += "\n"
+    
+    latex_str += r"\begin{tabularx}{\textwidth}{l|XXXX}" + "\n"
     latex_str += r"\toprule" + "\n"
     
     # Header
-    latex_str += "Dataset & 10\\% Query & 25\\% Query & 50\\% Query \\\\\n"
+    latex_str += "Dataset & 10\\% Query & 25\\% Query & 50\\% Query & Dimension \\\\\n"
     latex_str += r"\midrule" + "\n"
     
     # Data rows
     for _, row in rankings_df_formatted.iterrows():
         dataset = row['Dataset']
-        vals = [str(row[col]) for col in exp_columns]
-        latex_str += r"\texttt{" + f"{dataset}" + r"} & " + ' & '.join(vals) + r" \\" + "\n"
+        vals = [str(row[col]) for col in val_columns]
+        if dataset == "pumsb_star":
+            latex_str += r"\texttt{pumsb\_star} & " + ' & '.join(vals) + r" \\" + "\n"
+        elif dataset == "ocr_letters":
+            latex_str += r"\texttt{ocr\_letters} & " + ' & '.join(vals) + r" \\" + "\n"
+        else:
+            latex_str += r"\texttt{" + f"{dataset}" + r"} & " + ' & '.join(vals) + r" \\" + "\n"
 
-    
+    # Summary row
+    latex_str += r"\midrule" + "\n"
+    latex_str += r"No. Times Ranked Highest: & \textcolor{npgRed}{10}, \textcolor{npgPurple}{7}, \textcolor{npgBlue}{5}, \textcolor{npgGreen}{15}, \textcolor{npgNavy}{17} & \textcolor{npgRed}{11}, \textcolor{npgPurple}{1}, \textcolor{npgBlue}{4}, \textcolor{npgGreen}{12}, \textcolor{npgNavy}{14} & \textcolor{npgRed}{14}, \textcolor{npgPurple}{0}, \textcolor{npgBlue}{4}, \textcolor{npgGreen}{8}, \textcolor{npgNavy}{10} & \\" + "\n"
+
     latex_str += r"\bottomrule" + "\n"
     latex_str += r"\end{tabularx}" + "\n"
 
-    # Legend
+    # Legend with ggsci colors
     latex_str += r"\begin{center}" + "\n" 
     latex_str += r"\footnotesize" + "\n" 
-    latex_str += r"\textcolor{blue}{ArgMax Product} \quad" + "\n"
-    latex_str += r"\textcolor{purple}{Independent} \quad" + "\n"
-    latex_str += r"\textcolor{red}{Max Product} \quad" + "\n"
-    latex_str += r"\textcolor{olive}{PAC\_MAP} \quad" + "\n"
-    latex_str += r"\textcolor{orange}{PAC\_MAP\_Hamming}" + "\n"
+    latex_str += r"\textcolor{npgRed}{ArgMax Product} \quad" + "\n"
+    latex_str += r"\textcolor{npgPurple}{Independent} \quad" + "\n"
+    latex_str += r"\textcolor{npgBlue}{Max Product} \quad" + "\n"
+    latex_str += r"\textcolor{npgGreen}{PAC-MAP} \quad" + "\n"
+    latex_str += r"\textcolor{npgNavy}{PAC-MAP-Smooth}" + "\n"
     latex_str += r"\end{center}" + "\n"
-    latex_str += r"\end{table}" + "\n"
+    latex_str += r"\end{table*}" + "\n"
     
     # Add package requirements at the top
     latex_note = r"% Requires \usepackage{xcolor} and \usepackage{tabularx} in your LaTeX preamble" + "\n"
     
     # Add legend
     method_colors = get_method_colors()
-    legend = "\n% Legend (ranks shown in ascending order):\n"
+    legend = "\n% Legend (methods in alphabetical order, using ggsci NPG palette):\n"
+    legend += "% NPG Colors: Red=#E64B35, Blue=#4DBBD5, Green=#00A087, Navy=#3C5488, Purple=#8491B4\n"
     for method, color in method_colors.items():
         legend += f"% {method}: \\textcolor{{{color}}}{{colored}}\n"
     
@@ -159,11 +182,19 @@ def rank_by_map_est(df, n_methods=4):
     return df
 
 ranks_by_map_est = rank_by_map_est(all_results, n_methods=num_methods)
+ranks_for_david = ranks_by_map_est.drop(columns=['Date', 'Query', 'MAP Estimate', "MAP Probability", "Runtime", "Experiment ID", "Evid Proportion"])
+ranks_for_david['Trial'] = ranks_for_david.groupby(
+    ['Dataset', 'Query Proportion', 'Method']
+).cumcount() + 1 
+ranks_for_david.to_csv("results/ranks_for_david.csv")
 
 # Aggregate before pivoting
 ranks_aggregated = ranks_by_map_est.groupby(
     ["Experiment ID", "Dataset", "Method"]
 ).agg({"Rank": 'mean'}).reset_index()
+rank1_counts = ranks_aggregated[ranks_aggregated['Rank'] == 1.0].groupby(
+    ['Experiment ID', 'Method']
+).size().reset_index(name='Rank_1_Count')
 
 # Create rankings grid manually - alphabetical order
 method_order = sorted(all_results['Method'].unique())
@@ -201,7 +232,7 @@ rankings_df = rankings_df.rename(columns={
     exp_ids[1]: '25% Query',
     exp_ids[2]: '50% Query'
 })
-
+rankings_df['Dimension'] = [111, 123, 100, 100, 500, 126, 180, 100, 64, 190, 17, 294, 112, 500, 16, 128, 69, 163, 500, 135]
 print(rankings_df)
 print(f"\nMethod order: {method_order}")
 
