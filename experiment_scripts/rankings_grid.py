@@ -107,7 +107,7 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     latex_str += r"\textcolor{npgPurple}{Independent} \quad" + "\n"
     latex_str += r"\textcolor{npgBlue}{Max Product} \quad" + "\n"
     latex_str += r"\textcolor{npgGreen}{PAC-MAP} \quad" + "\n"
-    latex_str += r"\textcolor{npgNavy}{PAC-MAP-Smooth}" + "\n"
+    latex_str += r"\textcolor{npgNavy}{Smooth-PAC-MAP}" + "\n"
     latex_str += r"\end{center}" + "\n"
     latex_str += r"\end{table*}" + "\n"
     
