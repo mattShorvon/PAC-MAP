@@ -150,6 +150,7 @@ def pac_map_tracking(
         n_jobs: int = -1,
         warm_start_cands: List[Evidence] = None,
         warm_start_probs: List[float] = None,
+        save_tracking: bool = False,
         tracking_path: Path = None
         ) -> Tuple[Evidence, float]:
     
@@ -168,8 +169,6 @@ def pac_map_tracking(
             "The list of warm start candidates has to be the same length "
             "as the list of their probabilities"
         )
-    assert tracking_path, ("You need to provide a location to save the " 
-                           "tracking data to")
 
     # Condition SPN on evidence once at the start
     if evidence and len(evidence) > 0:
@@ -209,6 +208,7 @@ def pac_map_tracking(
     m = 0
     M = float('inf')
     tracking_list = []
+    iteration = 0
 
     try:
         while m < M:
@@ -253,12 +253,18 @@ def pac_map_tracking(
                 M = np.log(1/fail_prob)/(p_hat/(1 - err_tol)) # Currently using approximate calculation
             
             # Add to the tracking list
+            iteration += 1
             tracking_list.append({
+                "iteration": iteration,
                 "p_hat": p_hat,
                 "p_tick": p_tick,
                 "m": m,
                 "M": M
             })
+            print(f"Iteration: {iteration}")
+            print(f"p_hat: {p_hat}")
+            print(f"p_tick: {p_tick}")
+            print(f"m: {m}, M: {M}")
 
             # Check if the sample_cap has been hit
             if m >= sample_cap:
@@ -274,7 +280,9 @@ def pac_map_tracking(
 
     # Save tracking data
     tracking_df = pd.DataFrame(tracking_list)
-    tracking_df.to_csv(tracking_path, index=False)
-    print(f"Saved tracking data to {tracking_path}")
+    if save_tracking and tracking_path is not None:
+        tracking_df.to_csv(tracking_path, index=False)
+        print(f"Tracking data saved to {tracking_path}")
+    
 
-    return [q_hat, p_hat]
+    return [q_hat, p_hat, tracking_df]
