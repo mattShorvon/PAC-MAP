@@ -19,17 +19,23 @@ def get_method_colors():
 
 def format_rank_list_with_colors(rank_list, method_order=None):
     """
-    Format list of (rank, method) tuples with LaTeX colors.
+    Format list of ranks with LaTeX colors, bolding winners.
     
     Args:
-        rank_list: List of (rank, method) tuples
-        method_order: Not used (kept for compatibility)
+        rank_list: List of ranks
+        method_order: List of methods in alphabetical order
     """
     if rank_list is None or (isinstance(rank_list, float) and np.isnan(rank_list)):
         return '-'
     
     method_colors = get_method_colors()
     formatted = []
+    
+    # Find minimum rank (winner)
+    valid_ranks = [r for r in rank_list if r is not None]
+    if not valid_ranks:
+        return '-'
+    min_rank = min(valid_ranks)
     
     # Handle list of ranks
     for i, rank in enumerate(rank_list):
@@ -38,8 +44,13 @@ def format_rank_list_with_colors(rank_list, method_order=None):
         else:
             method = method_order[i] if i < len(method_order) else None
             color = method_colors.get(method, 'black') if method else 'black'
-            # Format: \textcolor{blue}{1.0}
-            formatted.append(f"\\textcolor{{{color}}}{{{rank:.1f}}}")
+            
+            # Format: $\textcolor{blue}{\mathbf{1.0}}$ for winners
+            # Format: $\textcolor{blue}{1.0}$ for non-winners
+            if rank == min_rank:
+                formatted.append(f"$\\textcolor{{{color}}}{{\\mathbf{{{rank:.1f}}}}}$")
+            else:
+                formatted.append(f"$\\textcolor{{{color}}}{{{rank:.1f}}}$")
     
     return ', '.join(formatted)
 
@@ -75,11 +86,11 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     latex_str += r"\definecolor{npgOrange}{HTML}{F39B7F}" + "\n"
     latex_str += "\n"
     
-    latex_str += r"\begin{tabularx}{\textwidth}{l|XXXX}" + "\n"
+    latex_str += r"\begin{tabular}{l@{\hspace{0.1em}}l|lll}" + "\n"
     latex_str += r"\toprule" + "\n"
-    
+
     # Header
-    latex_str += "Dataset & 10\\% Query & 25\\% Query & 50\\% Query & Dimension \\\\\n"
+    latex_str += "Dataset & Dimension & 10\% Query & 25\% Query & 50\% Query \\\\\n"
     latex_str += r"\midrule" + "\n"
     
     # Data rows
@@ -95,14 +106,15 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
 
     # Summary row
     latex_str += r"\midrule" + "\n"
-    latex_str += r"No. Times Ranked Highest: & \textcolor{npgRed}{10}, \textcolor{npgPurple}{7}, \textcolor{npgBlue}{5}, \textcolor{npgGreen}{15}, \textcolor{npgNavy}{17} & \textcolor{npgRed}{11}, \textcolor{npgPurple}{1}, \textcolor{npgBlue}{4}, \textcolor{npgGreen}{12}, \textcolor{npgNavy}{14} & \textcolor{npgRed}{14}, \textcolor{npgPurple}{0}, \textcolor{npgBlue}{4}, \textcolor{npgGreen}{8}, \textcolor{npgNavy}{10} & \\" + "\n"
+    latex_str += r"\quad No. Times Ranked Highest: & & \textcolor{npgRed}{10}, \textcolor{npgPurple}{7}, \textcolor{npgBlue}{5}, \textcolor{npgGreen}{15}, \textcolor{npgNavy}{\textbf{17}} & \textcolor{npgRed}{11}, \textcolor{npgPurple}{1}, \textcolor{npgBlue}{4}, \textcolor{npgGreen}{12}, \textcolor{npgNavy}{\textbf{14}} & \textcolor{npgRed}{\textbf{14}}, \textcolor{npgPurple}{0}, \textcolor{npgBlue}{4}, \textcolor{npgGreen}{8}, \textcolor{npgNavy}{10} \\" + "\n"
 
     latex_str += r"\bottomrule" + "\n"
-    latex_str += r"\end{tabularx}" + "\n"
+    latex_str += r"\end{tabular}" + "\n"
 
     # Legend with ggsci colors
     latex_str += r"\begin{center}" + "\n" 
     latex_str += r"\footnotesize" + "\n" 
+    latex_str += r"\textbf{Method:} \quad" + "\n"
     latex_str += r"\textcolor{npgRed}{ArgMax Product} \quad" + "\n"
     latex_str += r"\textcolor{npgPurple}{Independent} \quad" + "\n"
     latex_str += r"\textcolor{npgBlue}{Max Product} \quad" + "\n"
@@ -233,6 +245,7 @@ rankings_df = rankings_df.rename(columns={
     exp_ids[2]: '50% Query'
 })
 rankings_df['Dimension'] = [111, 123, 100, 100, 500, 126, 180, 100, 64, 190, 17, 294, 112, 500, 16, 128, 69, 163, 500, 135]
+rankings_df = rankings_df[['Dataset', 'Dimension', '10% Query', '25% Query', '50% Query']]
 print(rankings_df)
 print(f"\nMethod order: {method_order}")
 
