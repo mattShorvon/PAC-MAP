@@ -159,8 +159,8 @@ runtime_results_summary = pd.DataFrame({
 
 for method in runtime_results['Method'].unique():
     runtime_results_wide[method] = (
-        runtime_results_wide['Mean_Runtime'][method].map('{:.5g}'.format) + 
-        '+/e' + runtime_results_wide['Std_Runtime'][method].map('{:.5g}'.format)
+        runtime_results_wide['Mean_Runtime'][method].map('{:.3g}'.format) + 
+        '+/-' + runtime_results_wide['Std_Runtime'][method].map('{:.3f}'.format)
     )
 
 runtime_results_wide = runtime_results_wide[
