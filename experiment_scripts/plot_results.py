@@ -216,18 +216,6 @@ else:
         index=False
     )
 
-# Table to send to David, comment out if running pipeline
-
-# all_results.drop(
-#     columns = ['Date', 'Query Proportion', 'Evid Proportion', 'MAP Estimate'], 
-#     inplace = True
-# )
-# all_results['Query_Index'] = all_results.groupby(
-#     ['Dataset', 'Method']).cumcount() + 1
-# all_results = all_results.reset_index()
-# all_results.drop(columns=['index', 'Query'], inplace=True)
-# all_results.to_csv('results/small_datasets_results_for_david.csv', index=False)
-
 if do_hamming:
     # Hamming distance analysis
     def hamming_distance_from_strings(est1_str, est2_str):

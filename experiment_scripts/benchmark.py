@@ -200,7 +200,7 @@ for dataset in datasets:
                 ms_est, _ = max_search(
                     spn,
                     forward_checking,
-                    time_limit=60, # just giving it 1 minute for this run-through, don't care that much about MS's results anyway
+                    time_limit=60,
                     marginalized_variables=m,
                     evidence=e,
                 )

@@ -194,11 +194,6 @@ def rank_by_map_est(df, n_methods=4):
     return df
 
 ranks_by_map_est = rank_by_map_est(all_results, n_methods=num_methods)
-ranks_for_david = ranks_by_map_est.drop(columns=['Date', 'Query', 'MAP Estimate', "MAP Probability", "Runtime", "Experiment ID", "Evid Proportion"])
-ranks_for_david['Trial'] = ranks_for_david.groupby(
-    ['Dataset', 'Query Proportion', 'Method']
-).cumcount() + 1 
-ranks_for_david.to_csv("results/ranks_for_david.csv")
 
 # Aggregate before pivoting
 ranks_aggregated = ranks_by_map_est.groupby(

@@ -17,7 +17,8 @@ full benchmark experiment pipeline:
 
 - make_queries_and_evids.py creates .map files in each dataset folder that
   contain randomly chosen query variables, evidence variables and evidence assignments for each
-  MAP query to test the methods with
+  MAP query to test the methods with. Don't run this script if you just want to
+  use the same queries and evidences that were used in the paper.
 - benchmark.py loads the MAP queries and spns for each dataset, runs them through
   the specified methods, and saves the max probabilities and runtimes
 - plot_results.py loads the results, aggregates them and re-formats them, also
@@ -26,7 +27,7 @@ full benchmark experiment pipeline:
 For the experiment pipeline, you need data for the experiments contained in a
 folder in the root directory with the following structure:
 
-pyspn-may312020/
+pac-map/
 ├── run_all.sh
 ├── 20-datasets
 │ ├── accidents
@@ -41,4 +42,5 @@ https://gitlab.com/pgm-usp/learned-spns/-/tree/0242367e3fa014d2dc86c8200196153e5
 
 You then need to specify the query & evidence proportion parameters. For a full
 description of the input arguments for each python script in the run_all pipeline,
-see the python files.
+see the python files. It is also possible to run the benchmark for individual
+datasets or only for specific methods etc.
