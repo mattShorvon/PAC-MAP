@@ -97,7 +97,7 @@ plot(g)
 ggsave(
     "results/amp_pacmaph_comparison_pct_increase.pdf",
     g,
-    width = 8, height = 6, dpi = 300
+    width = 10, height = 6, dpi = 300
 )
 
 # Using log2
