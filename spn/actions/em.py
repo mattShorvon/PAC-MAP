@@ -6,7 +6,7 @@ import copy
 from typing import Dict, cast, List
 import math
 import numpy
-from maua_et_al_experiments.database import DB
+from spn.database import DB
 from spn.data.partitioned_data import ParsedData
 from spn.node.base import SPN
 from spn.actions.base import Action

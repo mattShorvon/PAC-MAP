@@ -22,7 +22,7 @@ if __name__ == "__main__":
     learn = False
     test_likelihood = True
     test_sampling = False
-    test_cond_sampling = True
+    test_cond_sampling = False
     vals = [0, 1]
     p_x1 = 0.7
     path = "test_inputs/toy_data/toy_data.train.data"
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         print('Data loaded')
     print("\n=== Ground Truth from Generated Data ===")
 
-    # Total counts
+    # Empirical probabilities: 
     n_total = len(data)
     n_x1_1 = len(data[data["X1"] == 1])
     n_x1_0 = len(data[data["X1"] == 0])
@@ -76,6 +76,10 @@ if __name__ == "__main__":
     n_x1_0_x2_1 = len(data[(data["X1"] == 0) & (data["X2"] == 1)])
     n_x1_0_x2_0 = len(data[(data["X1"] == 0) & (data["X2"] == 0)])
 
+    print(f"P(X2=1, X1=1) = {n_x1_1_x2_1:.3f} (expected: 0.56)")
+    print(f"P(X2=0, X1=1) = {n_x1_1_x2_0:.3f} (expected: 0.14)")
+    print(f"P(X2=1, X1=0) = {n_x1_0_x2_1:.3f} (expected: 0.04)")
+    print(f"P(X2=0, X1=0) = {n_x1_0_x2_0:.3f} (expected: 0.16)")
     print(f"\nP(X2=1 | X1=1) = {n_x1_1_x2_1/n_x1_1:.3f} (expected: 0.800)")
     print(f"P(X2=0 | X1=1) = {n_x1_1_x2_0/n_x1_1:.3f} (expected: 0.200)")
     print(f"P(X2=1 | X1=0) = {n_x1_0_x2_1/n_x1_0:.3f} (expected: 0.200)")
@@ -161,6 +165,33 @@ if __name__ == "__main__":
         print(f"P(X3 = 0 | X1 = 1) according to likelihood(): {ans6}")
         print(f"P(X3 = 1 | X1 = 0) according to likelihood(): {ans7}")
         print(f"P(X3 = 0 | X1 = 0) according to likelihood(): {ans8}")
+
+        # Test the joint probabilities
+        query_1 = Evidence({var_x1: [0], var_x2: [0], var_x3: [0]})
+        query_2 = Evidence({var_x1: [1], var_x2: [0], var_x3: [0]})
+        query_3 = Evidence({var_x1: [0], var_x2: [1], var_x3: [0]})
+        query_4 = Evidence({var_x1: [0], var_x2: [0], var_x3: [1]})
+        query_5 = Evidence({var_x1: [1], var_x2: [1], var_x3: [0]})
+        query_6 = Evidence({var_x1: [1], var_x2: [0], var_x3: [1]})
+        query_7 = Evidence({var_x1: [0], var_x2: [1], var_x3: [1]})
+        query_8 = Evidence({var_x1: [1], var_x2: [1], var_x3: [1]})
+        ans1, ans2, ans3, ans4, ans5, ans6, ans7, ans8 = np.exp(
+            likelihood_multiproc(
+                spn_path, 
+                [query_1, query_2, query_3, query_4, query_5, query_6, query_7, query_8],
+                n_jobs=2
+            )
+        )
+        print(f"P(0, 0, 0): {ans1}")
+        print(f"P(1, 0, 0): {ans2}")
+        print(f"P(0, 1, 0): {ans3}")
+        print(f"P(0, 0, 1): {ans4}")
+        print(f"P(1, 1, 0): {ans5}")
+        print(f"P(1, 0, 1): {ans6}")
+        print(f"P(0, 1, 1): {ans7}")
+        print(f"P(1, 1, 1): {ans8}")
+
+
 
     # Testing the sampling
     if test_sampling:

@@ -1,7 +1,7 @@
 """Bag: Action for applying bagging to learn SPNs"""
 
 import logging
-from maua_et_al_experiments.database import DB
+from spn.database import DB
 from spn.learn import gens
 from spn.actions.base import Action
 from spn.actions.em import em_with_restarts

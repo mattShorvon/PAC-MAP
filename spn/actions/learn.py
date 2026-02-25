@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from spn.learn import gens
 from spn.data.partitioned_data import PartitionedData
-from maua_et_al_experiments.database import DB
+from spn.database import DB
 from spn.actions.base import Action
 
 

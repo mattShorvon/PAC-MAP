@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from spn.io.file import to_file, from_file
 from spn.io.zhao_file import to_zhao_file, from_zhao_file
-from maua_et_al_experiments.database import DB
+from spn.database import DB
 from spn.actions.base import Action
 from spn.data.parsed_data import ParsedData
 
