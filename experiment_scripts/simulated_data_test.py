@@ -20,9 +20,10 @@ if __name__ == "__main__":
     n = 1000
     create_new_data = False
     learn = False
-    test_likelihood = True
+    test_likelihood = False
     test_sampling = False
     test_cond_sampling = False
+    test_nltcs_lik = True
     vals = [0, 1]
     p_x1 = 0.7
     path = "test_inputs/toy_data/toy_data.train.data"
@@ -273,3 +274,63 @@ if __name__ == "__main__":
         print(f"P(X3 = 1 | X1 = 0) according to sampling(): {count_x3_1 / len(samples_x1_0_x3)}")
         print(f"P(X3 = 0 | X1 = 0) according to sampling(): {(n - count_x3_1) / len(samples_x1_0_x3)}")
         conditioned_spn_path.unlink()
+    
+    if test_nltcs_lik:
+        spn_path = Path('test_inputs/toy_data/toy_data.spn')
+        spn = from_file(spn_path)
+        data_path = Path('20-datasets/nltcs/nltcs.train.data')
+        train_data = PartitionedData(Path(data_path), 1.0)
+        var_1 = train_data.scope[0]
+        var_2 = train_data.scope[1]
+        var_3 = train_data.scope[2]
+        var_4 = train_data.scope[3]
+        var_5 = train_data.scope[4]
+        var_6 = train_data.scope[5]
+        var_7 = train_data.scope[6]
+        var_8 = train_data.scope[7]
+        var_9 = train_data.scope[8]
+        var_10 = train_data.scope[9]
+        var_11 = train_data.scope[10]
+        var_12 = train_data.scope[11]
+        var_13 = train_data.scope[12]
+        var_14 = train_data.scope[13]
+        var_15 = train_data.scope[14]
+        var_16 = train_data.scope[15]
+        query_1 = Evidence({var_1: [1], 
+                            var_2: [0], 
+                            var_3: [0], 
+                            var_4: [0],
+                            var_5: [0],
+                            var_6: [1],
+                            var_7: [1],
+                            var_8: [0],
+                            var_9: [0],
+                            var_10: [0],
+                            var_11: [0],
+                            var_12: [0],
+                            var_13: [1], 
+                            var_14: [0],
+                            var_15: [1],
+                            var_16: [0]})
+        query_2 = Evidence({var_1: [0],
+                            var_2: [0],
+                            var_3: [1], 
+                            var_4: [1],
+                            var_5: [0],
+                            var_6: [0],
+                            var_7: [1],
+                            var_8: [1],
+                            var_9: [0],
+                            var_10: [0],
+                            var_11: [1],
+                            var_12: [1],
+                            var_13: [0],
+                            var_14: [1],
+                            var_15: [1],
+                            var_16: [0]})
+        ans1 = np.exp(likelihood_multiproc(
+            spn_path, [query_1], n_jobs=1
+        ))
+        print(f"Query 1 prob: {ans1}")
+        # print(f"Query 2 prob: {ans2}")
+
