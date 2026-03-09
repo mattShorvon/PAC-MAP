@@ -252,7 +252,7 @@ logits.CubicSplineBasisExpansion <- function(model, X) {
 
 
 predict_proba.CubicSplineBasisExpansion <- function(model, X) {
-    plogis(logits.CubicSplineBasisExpansion(model, X)) # sigmoid
+    logits.CubicSplineBasisExpansion(model, X)
 }
 
 
