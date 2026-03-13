@@ -12,8 +12,9 @@ library(dplyr)
 new_cubic_spline_expansion <- function(
     n_knots = 5L,
     degree = 3L,
-    include_interactions = TRUE,
+    include_interactions = FALSE,
     weight_scale = 1.0,
+    weight_vector = NULL,
     sparsity = 0.0,
     x_low = 0.0,
     x_high = 1.0,
@@ -24,6 +25,7 @@ new_cubic_spline_expansion <- function(
             n_knots = n_knots,
             degree = degree,
             include_interactions = include_interactions,
+            weight_vector = weight_vector,
             weight_scale = weight_scale,
             sparsity = sparsity,
             x_low = x_low,
@@ -100,7 +102,11 @@ fit.CubicSplineBasisExpansion <- function(
     n_interactions <- length(interaction_pairs) * n_basis_per_var^2
     n_features <- n_main + n_interactions
 
-    weights <- rnorm(n_features, mean = 0, sd = model$weight_scale)
+    if (is.null(model$weight_vector)) {
+        weights <- abs(rnorm(n_features, mean = 0, sd = model$weight_scale))
+    } else {
+        weights <- abs(model$weight_vector)
+    }
 
     if (model$sparsity > 0) {
         n_zero <- as.integer(model$sparsity * n_features)

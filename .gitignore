@@ -206,6 +206,7 @@ tags
 *.query
 *.data
 *.map
+*.rds
 /test_inputs
 /small_datasets
 /20-datasets

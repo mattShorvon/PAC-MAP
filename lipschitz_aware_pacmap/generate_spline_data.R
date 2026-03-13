@@ -6,9 +6,9 @@ dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 # Initialise model
 model <- new_cubic_spline_expansion(
     n_knots              = 3L,
-    degree               = 3L,
-    include_interactions = TRUE,
-    weight_scale         = 1.0,
+    degree               = 2L,
+    include_interactions = FALSE,
+    weight_scale         = 0.5,
     sparsity             = 0.3,
     x_low                = 0.0,
     x_high               = 1.0,
@@ -19,7 +19,7 @@ model <- new_cubic_spline_expansion(
 result <- generate_data.CubicSplineBasisExpansion(
     model,
     n_samples       = 5000L,
-    n_query_vars    = 2L,
+    n_query_vars    = 1L,
     n_evidence_vars = 1L
 )
 model <- result$model
@@ -32,6 +32,11 @@ print(head(df, 5))
 
 cat("\nFeature summary (first 10 rows):\n")
 print(head(feature_summary.CubicSplineBasisExpansion(model), 10))
+
+plot_marginal_probs.CubicSplineBasisExpansion(
+    model, df, metadata,
+    save_path = file.path(output_dir, "marginal_probs.png")
+)
 
 # Save data and weights
 write.csv(df, file.path(output_dir, "spline_data.csv"), row.names = FALSE)
