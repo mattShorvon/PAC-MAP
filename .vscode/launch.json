@@ -90,12 +90,22 @@
             "justMyCode": true
         },
         {
-            "name":"Python: spn_to_json.py",
+            "name":"Python: spn_to_json.py with toy_data",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/spn_to_json.py",
             "console": "integratedTerminal",
-            "args": ["test_inputs/iris/iris.spn"],
+            "args": ["test_inputs/toy_data/toy_data.spn"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        },
+        {
+            "name":"Python: spn_to_json.py with nltcs",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/spn_to_json.py",
+            "console": "integratedTerminal",
+            "args": ["20-datasets/nltcs/nltcs.spn"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },

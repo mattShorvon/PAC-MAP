@@ -221,6 +221,7 @@ tags
 *.out
 *.tex
 *.pdf
+*.docx
 
 # bash files
 *.submit

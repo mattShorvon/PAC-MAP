@@ -100,14 +100,19 @@ def convert_to_bernoulli(node_id, nodes, scope_cache):
         'prob': prob
     }
 
-def build_json_structure(nodes, scope_cache):
+def build_json_structure(nodes, scope_cache, reversed_order = False):
     """Build the JSON structure"""
     json_nodes = []
     links = []
     node_id_map = {}  # Map old IDs to new sequential IDs
     
+    if reversed_order == True:
+        ordered_keys = sorted(nodes.keys(), reverse=True)
+    else:
+        ordered_keys = sorted(nodes.keys())
+
     # First pass: create nodes
-    for node_id in sorted(nodes.keys()):
+    for node_id in ordered_keys:
         node = nodes[node_id]
         
         # Try to convert to Bernoulli
@@ -190,15 +195,28 @@ def main():
     
     print(f"Parsing {input_path}...")
     nodes = parse_spn_file(input_path)
-    print(f"Found {len(nodes)} nodes")
     
+    # The nodes should be in reverse order, with the root node (final id) at the
+    # top, so that the neupi queries evaluate the nodes in the right order. 
+    # Therefore the first key of the nodes dictionary should be the last node
+    # (the root one, which will have key = len(nodes) - 1). If not, set reversed
+    # order to true so that nodes are processed in right order in 
+    # build_json_structure(). 
+    if next(iter(nodes), None) != len(nodes) - 1:
+        reversed_order = True
+    else: 
+        reversed_order = False
+    print(f"Found {len(nodes)} nodes")
+
     print("Computing scopes...")
     scope_cache = {}
     for node_id in nodes.keys():
         compute_scope(node_id, nodes, scope_cache)
     
     print("Building JSON structure...")
-    json_data = build_json_structure(nodes, scope_cache)
+    json_data = build_json_structure(
+        nodes, scope_cache, reversed_order=reversed_order
+    )
     
     print(f"Writing to {output_path}...")
     with open(output_path, 'w') as f:

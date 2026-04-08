@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 from spn.io.file import from_file
 from datetime import datetime
+import ast
 
 def get_method_colors():
     """Define colors for each method using ggsci NPG palette."""
@@ -13,7 +14,8 @@ def get_method_colors():
         'Independent': 'npgPurple',      # #8491B4
         'Max Product': 'npgBlue',        # #4DBBD5
         'PAC_MAP': 'npgGreen',           # #00A087
-        'PAC_MAP_Hamming': 'npgNavy'     # #3C5488
+        'PAC_MAP_Hamming': 'npgNavy',    # #3C5488
+        'ITSELF': 'npgOrange'            # #F39B7F
     }
 
 
@@ -106,7 +108,31 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
 
     # Summary row
     latex_str += r"\midrule" + "\n"
-    latex_str += r"\quad No. Times Ranked Highest: & & \textcolor{npgRed}{10}, \textcolor{npgPurple}{7}, \textcolor{npgBlue}{5}, \textcolor{npgGreen}{15}, \textcolor{npgNavy}{\textbf{17}} & \textcolor{npgRed}{11}, \textcolor{npgPurple}{1}, \textcolor{npgBlue}{4}, \textcolor{npgGreen}{12}, \textcolor{npgNavy}{\textbf{14}} & \textcolor{npgRed}{\textbf{14}}, \textcolor{npgPurple}{0}, \textcolor{npgBlue}{4}, \textcolor{npgGreen}{8}, \textcolor{npgNavy}{10} \\" + "\n"
+    latex_str += (
+        r"\quad No. Times Ranked Highest: & & "
+        r"\textcolor{npgRed}{10}, "
+        r"\textcolor{npgPurple}{7}, "
+        r"\textcolor{npgBlue}{5}, "
+        r"\textcolor{npgGreen}{15}, "
+        r"\textcolor{npgNavy}{\textbf{17}}, "
+        r"\textcolor{npgOrange}{3}"  # example count for ITSELF
+        r" & "
+        r"\textcolor{npgRed}{11}, "
+        r"\textcolor{npgPurple}{1}, "
+        r"\textcolor{npgBlue}{4}, "
+        r"\textcolor{npgGreen}{12}, "
+        r"\textcolor{npgNavy}{\textbf{14}}, "
+        r"\textcolor{npgOrange}{2}"
+        r" & "
+        r"\textcolor{npgRed}{\textbf{14}}, "
+        r"\textcolor{npgPurple}{0}, "
+        r"\textcolor{npgBlue}{4}, "
+        r"\textcolor{npgGreen}{8}, "
+        r"\textcolor{npgNavy}{10}, "
+        r"\textcolor{npgOrange}{1}"
+        r" \\"
+        "\n"
+    )
 
     latex_str += r"\bottomrule" + "\n"
     latex_str += r"\end{tabular}" + "\n"
@@ -120,6 +146,7 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     latex_str += r"\textcolor{npgBlue}{Max Product} \quad" + "\n"
     latex_str += r"\textcolor{npgGreen}{PAC-MAP} \quad" + "\n"
     latex_str += r"\textcolor{npgNavy}{Smooth-PAC-MAP}" + "\n"
+    latex_str += r"\textcolor{npgOrange}{ITSELF}" + "\n"
     latex_str += r"\end{center}" + "\n"
     latex_str += r"\end{table*}" + "\n"
     
@@ -129,7 +156,10 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     # Add legend
     method_colors = get_method_colors()
     legend = "\n% Legend (methods in alphabetical order, using ggsci NPG palette):\n"
-    legend += "% NPG Colors: Red=#E64B35, Blue=#4DBBD5, Green=#00A087, Navy=#3C5488, Purple=#8491B4\n"
+    legend += (
+        "% NPG Colors: Red=#E64B35, Blue=#4DBBD5, Green=#00A087, "
+        "Navy=#3C5488, Purple=#8491B4, Orange=#F39B7F\n"
+    )
     for method, color in method_colors.items():
         legend += f"% {method}: \\textcolor{{{color}}}{{colored}}\n"
     
@@ -147,53 +177,73 @@ assert args.experiment_ids, (
 )
 exp_ids = args.experiment_ids
 all_results = all_results[all_results["Experiment ID"].isin(exp_ids)]
+
+def _safe_ast(s):
+    if pd.isna(s):
+        return None
+    try:
+        return ast.literal_eval(str(s))
+    except Exception:
+        return s  # fallback: leave as-is
+
+# Canonicalize Query to a sorted tuple representation
+all_results['Query_norm'] = (
+    all_results['Query']
+    .apply(_safe_ast)
+    .apply(lambda q: tuple(sorted(q)) if isinstance(q, (list, tuple)) else q)
+)
+
+# Canonicalize MAP Estimate: sort items, use tuple of (var, tuple(vals))
+def _normalize_estimate(e):
+    e = _safe_ast(e)
+    if isinstance(e, dict):
+        # sort by key to get a stable order; normalize list values
+        items = sorted(e.items(), key=lambda kv: int(kv[0]) if str(kv[0]).isdigit() else str(kv[0]))
+        return tuple((k, tuple(v)) for k, v in items)
+    return e
+
+all_results['MAP_Estimate_norm'] = all_results['MAP Estimate'].apply(_normalize_estimate)
+
+# Now sort using normalized query
 all_results = all_results.sort_values(
-    ['Experiment ID', 'Dataset', 'Query']
+    ['Experiment ID', 'Dataset', 'Query_ID', 'Method']
 ).reset_index(drop=True)
 
-# Get number of methods
-num_methods = len(all_results['Method'].unique())
+# mask = (
+#     (all_results["Dataset"] == "nltcs") &
+#     (all_results["Query Proportion"] == 0.1) &
+#     (all_results["Evid Proportion"] == 0.9)
+# )
+# good_cols = ['Method', 'MAP Estimate', 'MAP_Estimate_norm', 'MAP Probability', 'Query Proportion', 'Evid Proportion', 'Query_norm', 'Query']
+# print(
+#     all_results.loc[mask, good_cols]
+#         .to_string()
+# )
 
-# Average ranking
-def rank_by_map_est(df, n_methods=4):
+def rank_by_map_est(df):
     """
-    Rank MAP Probability for every n_methods consecutive rows.
+    Rank MAP Probability for each (Experiment ID, Dataset, Query_ID) group.
     Methods with the same MAP Estimate get the same rank.
-    
-    Args:
-        df: DataFrame sorted by (Experiment ID, Dataset, Query)
-        n_methods: Number of methods per query
-    
-    Returns:
-        DataFrame with added 'Rank' column
     """
     df = df.copy()
-    ranks = []
-    
-    # Process every n_methods rows
-    for i in range(0, len(df), n_methods):
-        chunk = df.iloc[i:i+n_methods].copy()
-        
-        # Convert MAP Estimate dict to string for comparison
-        chunk['MAP_Estimate_Str'] = chunk['MAP Estimate'].astype(str)
-        
-        # Get unique estimates and their probabilities
-        estimate_probs = chunk.groupby('MAP_Estimate_Str')['MAP Probability'].first()
-        
-        # Rank the unique estimates
-        log_probs = np.log(estimate_probs + 1e-300)
-        log_probs = log_probs.round(12)
+
+    def _rank_group(group: pd.DataFrame) -> pd.DataFrame:
+        # Use normalized estimate as key
+        estimate_probs = group.groupby(
+            'MAP_Estimate_norm')['MAP Probability'].first()
+
+        log_probs = np.log(estimate_probs + 1e-300).round(12)
         estimate_ranks = log_probs.rank(method='min', ascending=False)
-        
-        # Map ranks back to each row
-        chunk['Rank'] = chunk['MAP_Estimate_Str'].map(estimate_ranks)
-        
-        ranks.extend(chunk['Rank'].tolist())
-    
-    df['Rank'] = ranks
+
+        group['Rank'] = group['MAP_Estimate_norm'].map(estimate_ranks)
+        return group
+
+    df = df.groupby(
+        ['Experiment ID', 'Dataset', 'Query_ID'], group_keys=False
+    ).apply(_rank_group)
     return df
 
-ranks_by_map_est = rank_by_map_est(all_results, n_methods=num_methods)
+ranks_by_map_est = rank_by_map_est(all_results)
 
 # Aggregate before pivoting
 ranks_aggregated = ranks_by_map_est.groupby(

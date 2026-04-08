@@ -20,7 +20,7 @@ if __name__ == "__main__":
     n = 1000
     create_new_data = False
     learn = False
-    test_likelihood = False
+    test_likelihood = True
     test_sampling = False
     test_cond_sampling = False
     test_nltcs_lik = True
