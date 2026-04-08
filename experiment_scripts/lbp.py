@@ -23,7 +23,12 @@ def product(vector:list) -> float:
 
 
 # Message passing algorithm
-def lbp(spn, evidence, marginalized=[], num_iterations=30, tolerance=1e-6):
+def lbp(spn, 
+        evidence, 
+        marginalized=[], 
+        num_iterations=30, 
+        tolerance=1e-6,
+        eps=1e-15):
     " Implements Liu & Ihler 2011's max-sum-product belief propagation algorithm "
     sc = sorted(spn.scope())
     print(f"{len(sc)} variables: {len(sc)-len(evidence)-len(marginalized)} query, {len(evidence)} evidence, {len(marginalized)} marginalized.")
@@ -82,7 +87,7 @@ def lbp(spn, evidence, marginalized=[], num_iterations=30, tolerance=1e-6):
                 # print(sc[v])
                 ve = evidence[sc[v]][0]
                 for j in range(sc[v].n_categories):
-                        values[j] == 0.0
+                        values[j] = 0.0 # Should this be a = 0.0 instead of ==?
                 values[ve] = 1.0
             else:
                 Z = 0.0
@@ -116,10 +121,10 @@ def lbp(spn, evidence, marginalized=[], num_iterations=30, tolerance=1e-6):
                                 if bel[vid][j] == maxbel:
                                     pi0 += pi_i[(vid,node)][j]
                         pi0 *= product(1.0-ll[(opa,node)] for opa in parent[node] if opa != pa)
-                    if pi1+pi0 > 0:
+                    if pi1+pi0 > eps:
                         pi[(node,pa)] = pi1/(pi1+pi0)  # normalization
                     else:
-                        # NUMERICAL ERROR: fallback to uniform for now (should fix this!)
+                        # NUMERICAL ERROR: fallback to uniform for now 
                         pi[(node,pa)] = 0.5
                     #print("leaf", vid, node.assignment, pi[(node,pa)], pi1, pi0, pi_i[vid,node])
              elif node.type == "sum":
@@ -149,11 +154,19 @@ def lbp(spn, evidence, marginalized=[], num_iterations=30, tolerance=1e-6):
                  # left child
                  ll1 = (1-llp)*node.weights[1]*(1-pi[(ch2,node)]) + llp*(node.weights[0]*(1-pi[(ch2,node)])+pi[(ch2,node)])
                  ll0 = (1-llp)*(1-pi[(ch2,node)] + node.weights[0]*pi[(ch2,node)]) + llp*node.weights[1]*pi[(ch2,node)]
-                 ll[(node,ch1)] = ll1/(ll0+ll1)
+                 if (ll0 + ll1) > eps:
+                    ll[(node,ch1)] = ll1/(ll0+ll1)
+                 else: 
+                    ### NUMERICAL ERROR: FALLBACK TO UNIFORM
+                    ll[(node,ch1)] = 0.5
                  # right child
                  ll1 = (1-llp)*node.weights[0]*(1-pi[(ch1,node)]) + llp*(node.weights[1]*(1-pi[(ch1,node)])+pi[(ch1,node)])
                  ll0 = (1-llp)*(1-pi[(ch1,node)] + node.weights[1]*pi[(ch1,node)]) + llp*node.weights[0]*pi[(ch1,node)]
-                 ll[(node,ch2)] = ll1/(ll0+ll1)
+                 if (ll0 + ll1) > eps:
+                    ll[(node,ch2)] = ll1/(ll0+ll1)
+                 else: 
+                    ### NUMERICAL ERROR: FALLBACK TO UNIFORM
+                    ll[(node,ch2)] = 0.5
              elif node.type == "product": 
                  ch1,ch2 = node.children
                  if node.root:
@@ -164,16 +177,16 @@ def lbp(spn, evidence, marginalized=[], num_iterations=30, tolerance=1e-6):
                      llp = ll[(pa,node)]
                  # left child
                  ll1 = (1.0-llp)*(1.0-pi[(ch2,node)]) + llp*pi[(ch2,node)]
-                 if ll1+(1-llp) > 0:
+                 if ll1+(1-llp) > eps:
                      ll[(node,ch1)] = ll1/(ll1+1-llp)
                  else:
-                     ### NUMERICAL ERROR: FALLBACK TO UNIFORM (should fix this!)
+                     ### NUMERICAL ERROR: FALLBACK TO UNIFORM
                      ll[(node,ch2)] = 0.5 
                  # right child
                  ll1 = (1.0-llp)*(1.0-pi[(ch1,node)]) + llp*pi[(ch1,node)]
-                 if ll1+1-llp > 0:
+                 if ll1+1-llp > eps:
                      ll[(node,ch2)] = ll1/(ll1+1-llp)
-                 else: ### NUMERICAL ERROR: FALLBACK TO UNIFORM (should fix this!)
+                 else: ### NUMERICAL ERROR: FALLBACK TO UNIFORM
                      ll[(node,ch2)] = 0.5 
         # compute messages to root nodes
         for (n,v) in ll_i:
@@ -196,7 +209,7 @@ def lbp(spn, evidence, marginalized=[], num_iterations=30, tolerance=1e-6):
                     b = product(ll_i[(n,v.id)][j] for n in parent_i[v.id])
                     Z += b
                     bel[v.id][j] = b
-                if Z > 0:
+                if Z > eps:
                     for j in range(v.n_categories):
                         bel[v.id][j] /= Z
                 else: ## NUMERICAL ERROR: should fix this!
