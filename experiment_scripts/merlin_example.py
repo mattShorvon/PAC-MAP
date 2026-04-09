@@ -7,7 +7,7 @@ from spn.utils.evidence import Evidence
 
 
 pathname = "test_inputs"
-basename = "test_spn"
+basename = "iris"
 
 if pathname[-1] != "/":
     pathname = pathname + "/"

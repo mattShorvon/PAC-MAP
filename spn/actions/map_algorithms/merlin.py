@@ -34,7 +34,7 @@ def merlin(
     starting_time = time.process_time()
     try:
         print(
-            f"{MERLIN_PATH} -a wmb -t MMAP --input-file {uai_file} --evidence-file {evidence_file} --query-file {query_file} --ibound {ibound} --iterations {iterations} --output-format json"
+            f"{MERLIN_PATH} -a wmb -t MAP --input-file {uai_file} --evidence-file {evidence_file} --query-file {query_file} --ibound {ibound} --iterations {iterations} --output-format json"
         )
         process_info = subprocess.run(
             [
@@ -42,7 +42,7 @@ def merlin(
                 "-a",
                 "wmb",
                 "-t",
-                "MMAP",
+                "MAP",
                 "--input-file",
                 uai_file,
                 "--evidence-file",
@@ -55,6 +55,8 @@ def merlin(
                 str(iterations),
                 "--output-format",
                 "json",
+                "--output-file",
+                query_file.strip('.query') + '_out'
             ],
             capture_output=True,
             check=True,
@@ -73,17 +75,25 @@ def merlin(
     for line in splitted_info:
         if line.startswith("[WMB] + induced width"):
             induced_width = int(line.split(" ")[-1])
-    time_line = splitted_info[-5]
-    value_line = splitted_info[-4]
+    time_line = splitted_info[-6]
+    value_line = splitted_info[-5]
     runtime = float(time_line.split(" ")[-2])
     final_value = float(re.sub("[()]", "", value_line.split(" ")[-1]))
     evidence = Evidence()
-    json_file = uai_file.split("/")[-1] + ".MMAP.json"
-    json_result = json.loads(open(json_file, "r").read())
+    # json_file = uai_file.split("/")[-1] + ".MAP.json"
+    json_file = query_file.strip('.query') + '_out.MAP.json'
+    with open(json_file, "r") as f:
+        raw = f.read()
+    raw = re.sub(r',\s*}', '}', raw)
+    json_result = json.loads(raw)
+    # json_result = json.loads(open(json_file, "r").read())
     var_index = 0
     for the_dict in json_result["solution"]:
-        evidence[query_vars[var_index]] = [the_dict["value"]]
-        var_index += 1
+        try:
+            evidence[query_vars[var_index]] = [the_dict["value"]]
+            var_index += 1
+        except IndexError:
+            continue
 
     return "{:.4f}".format(runtime), final_value, induced_width, evidence
 
