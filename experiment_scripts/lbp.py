@@ -6,6 +6,7 @@ from typing import Callable, cast, Dict, Optional, Tuple, List
 from spn.utils.evidence import Evidence
 from spn.structs import Variable
 from functools import reduce
+import operator
 
 
 # helper functions
@@ -18,8 +19,9 @@ def argmax(vector:list):
     return i
 
 def product(vector:list) -> float:
-    " Computes the product of the numbers in list vector"
-    return reduce(lambda x,y: x*y, vector)
+    "Computes the product of the numbers in list vector (empty product = 1.0)"
+    # Use 1.0 as the initial value so empty sequences return 1.0 instead of error
+    return reduce(operator.mul, vector, 1.0)
 
 
 # Message passing algorithm
