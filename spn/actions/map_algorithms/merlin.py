@@ -20,6 +20,7 @@ import os
 # Might be ~/Documents/merlin-master/bin instead, whatever works
 MERLIN_PATH = os.path.expanduser("~/Documents/merlin-master/bin/merlin")
 
+AAOBF_PATH = os.path.expanduser("~/pyspn-map-benchmark/AAOBF/mmap-solver")
 
 def merlin(
     evidence_file: str,
@@ -64,37 +65,80 @@ def merlin(
                 text=True,
                 timeout=timeout,
             )
+            splitted_info = process_info.stdout.strip().split("\n")
+            for line in splitted_info:
+                if line.startswith("[WMB] + induced width"):
+                    induced_width = int(line.split(" ")[-1])
+            time_line = splitted_info[-6]
+            value_line = splitted_info[-5]
+            runtime = float(time_line.split(" ")[-2])
+            final_value = float(re.sub("[()]", "", value_line.split(" ")[-1]))
+            evidence = Evidence()
+            # json_file = uai_file.split("/")[-1] + ".MAP.json"
+            json_file = query_file.strip('.query') + '_out.MAP.json'
+            with open(json_file, "r") as f:
+                raw = f.read()
+            raw = re.sub(r',\s*}', '}', raw)
+            json_result = json.loads(raw)
+            # json_result = json.loads(open(json_file, "r").read())
+            var_index = 0
+            for the_dict in json_result["solution"]:
+                try:
+                    evidence[query_vars[var_index]] = [the_dict["value"]]
+                    var_index += 1
+                except IndexError:
+                    continue
+
+            return "{:.4f}".format(runtime), final_value, induced_width, evidence
         else:
             print(
-                f"{MERLIN_PATH} -a wmb -t MAP --input-file {uai_file} --evidence-file {evidence_file} --query-file {query_file} --ibound {ibound} --iterations {iterations} --output-format json"
+                f"{AAOBF_PATH} -a any-aaobf --input-file {uai_file} --evidence-file {evidence_file} -M {query_file} -F uai"
             )
             process_info = subprocess.run(
                 [
-                    MERLIN_PATH,
+                    AAOBF_PATH,
                     "-a",
-                    "aobf",
-                    "-t",
-                    "MAP",
+                    "any-aaobf",
                     "--input-file",
                     uai_file,
                     "--evidence-file",
                     evidence_file,
-                    "--query-file",
-                    query_file,
-                    "--ibound",
-                    str(ibound),
-                    "--iterations",
-                    str(iterations),
-                    "--output-format",
-                    "json",
-                    "--output-file",
-                    query_file.strip('.query') + '_out'
+                    "-F",
+                    "uai",
+                    "-M",
+                    query_file.strip('.query') + '_out',
+                    "--time-limit",
+                    str(timeout)
                 ],
                 capture_output=True,
                 check=True,
                 text=True,
                 timeout=timeout,
             )
+            splitted_info = process_info.stdout.strip().split("\n")
+            for line in splitted_info:
+                if line.startswith("[WMB] + induced width"):
+                    induced_width = int(line.split(" ")[-1])
+            time_line = splitted_info[-4]
+            value_line = splitted_info[-2]
+            runtime = float(time_line.split(" ")[-2])
+            final_value = float(re.sub("[()]", "", value_line.split(" ")[-1]))
+            evidence = Evidence()
+            # json_file = uai_file.split("/")[-1] + ".MAP.json"
+            json_file = query_file.strip('.query') + '_out.MAP.json'
+            with open(json_file, "r") as f:
+                raw = f.read()
+            raw = re.sub(r',\s*}', '}', raw)
+            json_result = json.loads(raw)
+            # json_result = json.loads(open(json_file, "r").read())
+            var_index = 0
+            for the_dict in json_result["solution"]:
+                try:
+                    evidence[query_vars[var_index]] = [the_dict["value"]]
+                    var_index += 1
+                except IndexError:
+                    continue
+            return "{:.4f}".format(runtime), final_value, induced_width, evidence
     except subprocess.TimeoutExpired:
         return str(timeout), 0.0, None, None
     except subprocess.CalledProcessError as e:
@@ -103,31 +147,6 @@ def merlin(
         print(f"STDOUT: {e.stdout}")
         print(f"STDERR: {e.stderr}")
         raise
-    splitted_info = process_info.stdout.strip().split("\n")
-    for line in splitted_info:
-        if line.startswith("[WMB] + induced width"):
-            induced_width = int(line.split(" ")[-1])
-    time_line = splitted_info[-6]
-    value_line = splitted_info[-5]
-    runtime = float(time_line.split(" ")[-2])
-    final_value = float(re.sub("[()]", "", value_line.split(" ")[-1]))
-    evidence = Evidence()
-    # json_file = uai_file.split("/")[-1] + ".MAP.json"
-    json_file = query_file.strip('.query') + '_out.MAP.json'
-    with open(json_file, "r") as f:
-        raw = f.read()
-    raw = re.sub(r',\s*}', '}', raw)
-    json_result = json.loads(raw)
-    # json_result = json.loads(open(json_file, "r").read())
-    var_index = 0
-    for the_dict in json_result["solution"]:
-        try:
-            evidence[query_vars[var_index]] = [the_dict["value"]]
-            var_index += 1
-        except IndexError:
-            continue
-
-    return "{:.4f}".format(runtime), final_value, induced_width, evidence
 
 
 def markov_code(spn: SPN) -> List[str]:

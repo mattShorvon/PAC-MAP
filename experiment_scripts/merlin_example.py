@@ -6,8 +6,8 @@ from spn.structs import Variable
 from spn.utils.evidence import Evidence
 
 
-pathname = "20-datasets"
-basename = "nltcs"
+pathname = "test_inputs"
+basename = "iris"
 q_proportion = 0.1
 e_proportion = 0.9
 
@@ -23,7 +23,7 @@ sc = sorted(spn.scope())
 
 # Load evidence
 evidences = []
-with open(f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.evid") as f:
+with open(f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e_nomargs.evid") as f:
     for line in f:
         line = line.split()
         if len(line) > 0 and int(line[0]) > 0:
@@ -39,7 +39,7 @@ with open(f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.evid
 
 # Load query
 queries = []
-with open(f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.query") as f:
+with open(f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e_nomargs.query") as f:
     for line in f:
         line = line.split()
         q = [sc[int(line[i])] for i in range(1, int(line[0]) + 1)]
@@ -51,12 +51,13 @@ assert len(evidences) == len(queries)
 # Try out the merlin function
 q_vars = [sc[0]]
 result = merlin(
-    evidence_file=f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.evid",
-    query_file=f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.query",
+    evidence_file=f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e_nomargs.evid",
+    query_file=f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e_nomargs.query",
     uai_file=f"{pathname}{basename}/{basename}.uai",
-    algorithm='wmb',
+    algorithm='any-aaobf',
     ibound=10,
     iterations=2,
-    query_vars=q_vars
+    query_vars=spn.scope(),
+    timeout=600
 )
 print(result)

@@ -146,6 +146,21 @@ for dataset in datasets:
         ) as f:
             f.write('\n'.join(lines))
         print(f"Created {dataset}.map with {num_queries} query/evidence pairs") 
+    elif mode == 'both':
+        with open(
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.map", 'w'
+        ) as f:
+            f.write('\n'.join(lines))
+        print(f"Created {dataset}.map with {num_queries} query/evidence pairs") 
+        with open(
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.query", 'w'
+        ) as f:
+            f.write('\n'.join(q_lines))
+        with open(
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.evid", 'w'
+        ) as f:
+            f.write('\n'.join(e_lines))
+        print(f"Created {dataset}.query and .evid with {num_queries} query/evidence pairs") 
     else:
         with open(
             f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.query", 'w'
