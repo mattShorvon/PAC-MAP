@@ -6,14 +6,16 @@ from spn.structs import Variable
 from spn.utils.evidence import Evidence
 
 
-pathname = "test_inputs"
-basename = "iris"
+pathname = "20-datasets"
+basename = "nltcs"
+q_proportion = 0.1
+e_proportion = 0.9
 
 if pathname[-1] != "/":
     pathname = pathname + "/"
 
 # Load SPN
-spn = from_file(f"{pathname}{basename}/{basename}.spn")
+spn = from_file(f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.spn")
 
 # Convert the spn to a pgm
 make_uai_file(spn, f"{pathname}{basename}/{basename}.uai")
@@ -21,7 +23,7 @@ sc = sorted(spn.scope())
 
 # Load evidence
 evidences = []
-with open(f"{pathname}{basename}/{basename}.evid") as f:
+with open(f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.evid") as f:
     for line in f:
         line = line.split()
         if len(line) > 0 and int(line[0]) > 0:
@@ -37,7 +39,7 @@ with open(f"{pathname}{basename}/{basename}.evid") as f:
 
 # Load query
 queries = []
-with open(f"{pathname}{basename}/{basename}.query") as f:
+with open(f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.query") as f:
     for line in f:
         line = line.split()
         q = [sc[int(line[i])] for i in range(1, int(line[0]) + 1)]
@@ -49,10 +51,10 @@ assert len(evidences) == len(queries)
 # Try out the merlin function
 q_vars = [sc[0]]
 result = merlin(
-    spn = spn,
-    evidence_file=f"{pathname}{basename}/{basename}.evid",
-    query_file=f"{pathname}{basename}/{basename}.query",
+    evidence_file=f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.evid",
+    query_file=f"{pathname}{basename}/{basename}_{q_proportion}q_{e_proportion}e.query",
     uai_file=f"{pathname}{basename}/{basename}.uai",
+    algorithm='any-aaobf',
     ibound=10,
     iterations=2,
     query_vars=q_vars

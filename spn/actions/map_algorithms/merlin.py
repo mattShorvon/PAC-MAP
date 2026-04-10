@@ -22,10 +22,10 @@ MERLIN_PATH = os.path.expanduser("~/Documents/merlin-master/bin/merlin")
 
 
 def merlin(
-    spn: SPN,
     evidence_file: str,
     query_file: str,
     uai_file: str,
+    algorithm: str,
     ibound: int,
     iterations: int,
     query_vars: List[Variable],
@@ -33,36 +33,68 @@ def merlin(
 ) -> Tuple[str, float, Optional[int], Optional[Evidence]]:
     starting_time = time.process_time()
     try:
-        print(
-            f"{MERLIN_PATH} -a wmb -t MAP --input-file {uai_file} --evidence-file {evidence_file} --query-file {query_file} --ibound {ibound} --iterations {iterations} --output-format json"
-        )
-        process_info = subprocess.run(
-            [
-                MERLIN_PATH,
-                "-a",
-                "wmb",
-                "-t",
-                "MAP",
-                "--input-file",
-                uai_file,
-                "--evidence-file",
-                evidence_file,
-                "--query-file",
-                query_file,
-                "--ibound",
-                str(ibound),
-                "--iterations",
-                str(iterations),
-                "--output-format",
-                "json",
-                "--output-file",
-                query_file.strip('.query') + '_out'
-            ],
-            capture_output=True,
-            check=True,
-            text=True,
-            timeout=timeout,
-        )
+        if algorithm == "wmb":
+            print(
+                f"{MERLIN_PATH} -a wmb -t MAP --input-file {uai_file} --evidence-file {evidence_file} --query-file {query_file} --ibound {ibound} --iterations {iterations} --output-format json"
+            )
+            process_info = subprocess.run(
+                [
+                    MERLIN_PATH,
+                    "-a",
+                    "wmb",
+                    "-t",
+                    "MAP",
+                    "--input-file",
+                    uai_file,
+                    "--evidence-file",
+                    evidence_file,
+                    "--query-file",
+                    query_file,
+                    "--ibound",
+                    str(ibound),
+                    "--iterations",
+                    str(iterations),
+                    "--output-format",
+                    "json",
+                    "--output-file",
+                    query_file.strip('.query') + '_out'
+                ],
+                capture_output=True,
+                check=True,
+                text=True,
+                timeout=timeout,
+            )
+        else:
+            print(
+                f"{MERLIN_PATH} -a wmb -t MAP --input-file {uai_file} --evidence-file {evidence_file} --query-file {query_file} --ibound {ibound} --iterations {iterations} --output-format json"
+            )
+            process_info = subprocess.run(
+                [
+                    MERLIN_PATH,
+                    "-a",
+                    "aobf",
+                    "-t",
+                    "MAP",
+                    "--input-file",
+                    uai_file,
+                    "--evidence-file",
+                    evidence_file,
+                    "--query-file",
+                    query_file,
+                    "--ibound",
+                    str(ibound),
+                    "--iterations",
+                    str(iterations),
+                    "--output-format",
+                    "json",
+                    "--output-file",
+                    query_file.strip('.query') + '_out'
+                ],
+                capture_output=True,
+                check=True,
+                text=True,
+                timeout=timeout,
+            )
     except subprocess.TimeoutExpired:
         return str(timeout), 0.0, None, None
     except subprocess.CalledProcessError as e:

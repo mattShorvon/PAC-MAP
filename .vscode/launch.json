@@ -90,12 +90,12 @@
             "justMyCode": true
         }, 
         {
-            "name":"Python: make_queries_and_evids.py",
+            "name":"Python: make_queries_and_evids.py with nltcs",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/make_queries_and_evids.py",
             "console": "integratedTerminal",
-            "args": ["-dp", "20-datasets", "-d", "ad", "-q", "0.1", "-e", "0.9"],
+            "args": ["-dp", "20-datasets", "-d", "nltcs", "-q", "0.1", "-e", "0.9", "--no-margs", "-m", ".query/evid"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },

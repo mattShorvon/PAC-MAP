@@ -28,6 +28,11 @@ parser.add_argument('-q', '--q-percent', type=float, default=0.3,
                     help="Proportion of query variables")
 parser.add_argument('-e', '--e-percent', type=float, default=0.3,
                     help="Proportion of evidence variables")
+parser.add_argument('--no-margs', action='store_true', 
+                    help='Ensure every variable is either a query or evidence' \
+                    'variable (no marginals)')
+parser.add_argument('-m', '--mode', default='.map',
+                    help='write to single .map file or to .query and .evid?')
 
 args = parser.parse_args()
 use_all = args.all_datasets
@@ -41,6 +46,8 @@ else:
 num_queries = args.num_queries
 q_percent = args.q_percent
 e_percent = args.e_percent
+no_margs = args.no_margs
+mode = args.mode
 
 print(f"Datasets: {datasets}")
 
@@ -84,6 +91,8 @@ for dataset in datasets:
 
     # Write the query and evidence lines
     lines = []
+    q_lines = []
+    e_lines = []
     for i in range(num_queries):
         num_q_vars = np.floor(num_features * q_percent)
         num_e_vars = np.floor(num_features * e_percent)
@@ -97,7 +106,15 @@ for dataset in datasets:
         test_evid_prob = float('-inf')
         evidences_tried = 0
         while test_evid_prob == float('-inf'):
-            e_var_ids = random.sample(remaining, min(int(num_e_vars), len(remaining)))
+            if no_margs:
+                # If we want to ensure no marginal variables (some MAP methods
+                # will throw an error if a variable is missing from a query + 
+                # evid pair) then just set e_var_ids to all remaining. 
+                e_var_ids = remaining
+            else:
+                e_var_ids = random.sample(
+                    remaining, min(int(num_e_vars), len(remaining))
+                )
             e_values = random.choices([0, 1], k=len(e_var_ids))
             test_evid = Evidence()
             for i, var in enumerate(e_var_ids):
@@ -119,13 +136,24 @@ for dataset in datasets:
         q_line = ' '.join(map(str, q_var_ids))
         lines.append(q_line)
         lines.append(e_line)
+        q_lines.append(str(len(q_var_ids)) + ' ' + q_line)
+        e_lines.append(str(len(e_var_ids)) + ' ' + e_line)
 
-    # Write to .map file
-    with open(
-        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map", 'w'
+    # Write to files
+    if mode == '.map':
+        with open(
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map", 'w'
         ) as f:
-        for line in lines:
-            f.write(line + '\n')
-    
-    print(f"Created {dataset}.map with {num_queries} query/evidence pairs") 
+            f.write('\n'.join(lines))
+        print(f"Created {dataset}.map with {num_queries} query/evidence pairs") 
+    else:
+        with open(
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.query", 'w'
+        ) as f:
+            f.write('\n'.join(q_lines))
+        with open(
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.evid", 'w'
+        ) as f:
+            f.write('\n'.join(e_lines))
+        print(f"Created {dataset}.query and .evid with {num_queries} query/evidence pairs")
 
