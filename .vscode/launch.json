@@ -90,6 +90,26 @@
             "justMyCode": true
         }, 
         {
+            "name":"Python: benchmark_wmb_aaobf.py wmb on nltcs",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiment_scripts/benchmark_wmb_aaobf.py",
+            "console": "integratedTerminal",
+            "args": ["--data-path", "20-datasets", "-d", "nltcs", "-m", "WMB", "-q", "0.1", "-e", "0.9"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }, 
+        {
+            "name":"Python: benchmark_wmb_aaobf.py wmb on accidents",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiment_scripts/benchmark_wmb_aaobf.py",
+            "console": "integratedTerminal",
+            "args": ["--data-path", "20-datasets", "-d", "accidents", "-m", "WMB", "-q", "0.1", "-e", "0.9"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }, 
+        {
             "name":"Python: make_queries_and_evids.py with nltcs",
             "type": "python",
             "request": "launch",
