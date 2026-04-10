@@ -90,6 +90,16 @@
             "justMyCode": true
         }, 
         {
+            "name":"Python: benchmark_wmb_aaobf.py wmb on iris",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiment_scripts/benchmark_wmb_aaobf.py",
+            "console": "integratedTerminal",
+            "args": ["--data-path", "test_inputs", "-d", "iris", "-m", "WMB", "-q", "0.1", "-e", "0.9"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }, 
+        {
             "name":"Python: benchmark_wmb_aaobf.py wmb on nltcs",
             "type": "python",
             "request": "launch",
@@ -106,6 +116,26 @@
             "program": "${workspaceFolder}/experiment_scripts/benchmark_wmb_aaobf.py",
             "console": "integratedTerminal",
             "args": ["--data-path", "20-datasets", "-d", "accidents", "-m", "WMB", "-q", "0.1", "-e", "0.9"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }, 
+        {
+            "name":"Python: benchmark_wmb_aaobf.py AAOBF on iris",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiment_scripts/benchmark_wmb_aaobf.py",
+            "console": "integratedTerminal",
+            "args": ["--data-path", "test_inputs", "-d", "iris", "-m", "AAOBF", "-q", "0.1", "-e", "0.9"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }, 
+        {
+            "name":"Python: benchmark_wmb_aaobf.py AAOBF on nltcs",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiment_scripts/benchmark_wmb_aaobf.py",
+            "console": "integratedTerminal",
+            "args": ["--data-path", "20-datasets", "-d", "nltcs", "-m", "AAOBF", "-q", "0.1", "-e", "0.9"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         }, 

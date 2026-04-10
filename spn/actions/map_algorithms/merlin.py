@@ -18,7 +18,8 @@ import os
 # To get this path to work (at least on mac), you need to download the merlin 
 # repo into Documents as merlin-master, and use its makefile to compile it. 
 # Might be ~/Documents/merlin-master/bin instead, whatever works
-MERLIN_PATH = os.path.expanduser("~/Documents/merlin-master/bin/merlin")
+# MERLIN_PATH = os.path.expanduser("~/Documents/merlin-master/bin/merlin") # local
+MERLIN_PATH = os.path.expanduser("~/merlin/build/merlin") # on cluster
 
 AAOBF_PATH = os.path.expanduser("~/pyspn-map-benchmark/AAOBF/mmap-solver")
 
@@ -106,9 +107,12 @@ def merlin(
                     "-F",
                     "uai",
                     "-M",
-                    query_file.strip('.query') + '_out',
+                    query_file,
                     "--time-limit",
-                    str(timeout)
+                    str(timeout),
+                    "--threads",
+                    "10",
+                    "-v"
                 ],
                 capture_output=True,
                 check=True,
@@ -116,31 +120,11 @@ def merlin(
                 timeout=timeout,
             )
             splitted_info = process_info.stdout.strip().split("\n")
-            for line in splitted_info:
-                if line.startswith("[WMB] + induced width"):
-                    induced_width = int(line.split(" ")[-1])
-            time_line = splitted_info[-4]
             value_line = splitted_info[-2]
-            runtime = float(time_line.split(" ")[-2])
             final_value = float(re.sub("[()]", "", value_line.split(" ")[-1]))
-            evidence = Evidence()
-            # json_file = uai_file.split("/")[-1] + ".MAP.json"
-            json_file = query_file.strip('.query') + '_out.MAP.json'
-            with open(json_file, "r") as f:
-                raw = f.read()
-            raw = re.sub(r',\s*}', '}', raw)
-            json_result = json.loads(raw)
-            # json_result = json.loads(open(json_file, "r").read())
-            var_index = 0
-            for the_dict in json_result["solution"]:
-                try:
-                    evidence[query_vars[var_index]] = [the_dict["value"]]
-                    var_index += 1
-                except IndexError:
-                    continue
-            return "{:.4f}".format(runtime), final_value, induced_width, evidence
+            return final_value
     except subprocess.TimeoutExpired:
-        return str(timeout), 0.0, None, None
+        return 'timeout'
     except subprocess.CalledProcessError as e:
         print(f"Merlin subprocess failed with return code {e.returncode}")
         print(f"Command: {e.cmd}")

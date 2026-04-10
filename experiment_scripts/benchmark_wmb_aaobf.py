@@ -96,12 +96,12 @@ for dataset in datasets:
     # Set up the evidences and queries
     queries, evidences = [], []
     with open(
-        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.query"
+        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.query"
     ) as f:
         for line in f:
             queries.append(line.strip('\n'))
     with open(
-        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.evid"
+        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.evid"
     ) as f:
         for line in f:
             evidences.append(line.strip('\n'))
@@ -134,41 +134,94 @@ for dataset in datasets:
 
         # Run the queries through the MAP methods, store results
         if "WMB" in methods:
-            print(f"Starting query {i}")
-            start = time.perf_counter()
-            q_var_indices = [int(var) for var in q.split()[1:]]
-            q_vars = [spn.scope()[ind] for ind in q_var_indices]
-            result = merlin(
-                evidence_file=f"{data_path}/{dataset}/{dataset}.evid",
-                query_file=f"{data_path}/{dataset}/{dataset}.query",
-                uai_file=f"{data_path}/{dataset}/{dataset}.uai",
-                algorithm='wmb',
-                ibound=10,
-                iterations=2,
-                query_vars=spn.scope()
-            )
-            wmb_est = result[3] 
-            wmb_prob = spn.log_value(wmb_est) - p_evid
-            wmb_prob = np.exp(wmb_prob)
-            wmb_time = time.perf_counter() - start
-            print(f"Query runtime: {wmb_time}")
-            results.append({
-                "Date": datetime_str,
-                "Dataset": dataset,
-                "Query": q_vars,
-                "Method": "WMB Elimination",
-                "MAP Estimate": wmb_est,
-                "MAP Probability": wmb_prob,
-                "Runtime": wmb_time,
-                "Query Proportion": q_percent,
-                "Evid Proportion": e_percent,
-                "Experiment ID": experiment_id,
-                "Query_ID": i
-            })
-            print(f"WMB:           {wmb_prob:.4g}")
-            print()
+            try:
+                print(f"Starting query {i}")
+                start = time.perf_counter()
+                q_var_indices = [int(var) for var in q.split()[1:]]
+                q_vars = [spn.scope()[ind] for ind in q_var_indices]
+                result = merlin(
+                    evidence_file=f"{data_path}/{dataset}/{dataset}.evid",
+                    query_file=f"{data_path}/{dataset}/{dataset}.query",
+                    uai_file=f"{data_path}/{dataset}/{dataset}.uai",
+                    algorithm='wmb',
+                    ibound=10,
+                    iterations=2,
+                    query_vars=spn.scope(),
+                    timeout=360
+                )
+                if result == 'timeout':
+                    print('Timeout triggered, prob of 0 assigned')
+                    wmb_prob = 0
+                else:
+                    wmb_est = result[3] 
+                    wmb_prob = spn.log_value(wmb_est) - p_evid
+                    wmb_prob = np.exp(wmb_prob)
+                wmb_time = time.perf_counter() - start
+                print(f"Query runtime: {wmb_time}")
+                results.append({
+                    "Date": datetime_str,
+                    "Dataset": dataset,
+                    "Query": q_vars,
+                    "Method": "WMB Elimination",
+                    "MAP Estimate": wmb_est,
+                    "MAP Probability": wmb_prob,
+                    "Runtime": wmb_time,
+                    "Query Proportion": q_percent,
+                    "Evid Proportion": e_percent,
+                    "Experiment ID": experiment_id,
+                    "Query_ID": i
+                })
+                print(f"WMB:           {wmb_prob:.4g}")
+                print()
+            except Exception as error:
+                print(f"HBP failed with error {error}")
+                print(f"Error type: {type(error).__name__}")
+                run_success = False
+                break 
         if "AAOBF" in methods:
-            pass
+            try:
+                print(f"Starting query {i}")
+                start = time.perf_counter()
+                q_var_indices = [int(var) for var in q.split()[1:]]
+                q_vars = [spn.scope()[ind] for ind in q_var_indices]
+                result = merlin(
+                    evidence_file=f"{data_path}/{dataset}/{dataset}.evid",
+                    query_file=f"{data_path}/{dataset}/{dataset}.query",
+                    uai_file=f"{data_path}/{dataset}/{dataset}.uai",
+                    algorithm='any-aaobf',
+                    ibound=10,
+                    iterations=2,
+                    query_vars=spn.scope(),
+                    timeout=360
+                )
+                if result == 'timeout':
+                    print('Timeout triggered, prob of 0 assigned')
+                    aaobf_prob = 0
+                else:
+                    aaobf_prob = result - p_evid
+                    aaobf_prob = np.exp(aaobf_prob)
+                aaobf_time = time.perf_counter() - start
+                print(f"Query runtime: {aaobf_time}")
+                results.append({
+                    "Date": datetime_str,
+                    "Dataset": dataset,
+                    "Query": q_vars,
+                    "Method": "AAOBF",
+                    "MAP Estimate": evidence, # Just shoving this here, the aaobf method doesn't output its actual map assignment
+                    "MAP Probability": aaobf_prob,
+                    "Runtime": aaobf_time,
+                    "Query Proportion": q_percent,
+                    "Evid Proportion": e_percent,
+                    "Experiment ID": experiment_id,
+                    "Query_ID": i
+                })
+                print(f"AAOBF:           {aaobf_prob:.4g}")
+                print()
+            except Exception as error:
+                print(f"HBP failed with error {error}")
+                print(f"Error type: {type(error).__name__}")
+                run_success = False
+                break 
     if run_success:
         results_dt = pd.DataFrame(results)
         if no_results_file is False:
