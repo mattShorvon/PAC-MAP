@@ -105,11 +105,55 @@ for dataset in datasets:
     ) as f:
         for line in f:
             evidences.append(line.strip('\n'))
-    
+
+    # Global time budget (seconds) per dataset
+    time_budget = 120.0
+    dataset_start = time.perf_counter()
+
     # Loop through each evidence and query combo
     results = []
     print("Starting benchmark")
+    run_success = True
+
     for i, (q, e) in enumerate(zip(queries, evidences), start=1):
+        # Check remaining time before starting this query
+        elapsed_dataset = time.perf_counter() - dataset_start
+        remaining_dataset = time_budget - elapsed_dataset
+        if remaining_dataset <= 0:
+            # No time left: add zero-probability entries for all remaining queries
+            for j in range(i, len(queries) + 1):
+                q_line = queries[j - 1]
+                q_var_indices = [int(var) for var in q_line.split()[1:]]
+                if "WMB" in methods:
+                    results.append({
+                        "Date": datetime_str,
+                        "Dataset": dataset,
+                        "Query": q_var_indices,
+                        "Method": "WMB Elimination",
+                        "MAP Estimate": "NA",
+                        "MAP Probability": 0.0,
+                        "Runtime": 0.0,
+                        "Query Proportion": q_percent,
+                        "Evid Proportion": e_percent,
+                        "Experiment ID": experiment_id,
+                        "Query_ID": j
+                    })
+                if "AAOBF" in methods:
+                    results.append({
+                        "Date": datetime_str,
+                        "Dataset": dataset,
+                        "Query": q_var_indices,
+                        "Method": "AAOBF",
+                        "MAP Estimate": "NA",
+                        "MAP Probability": 0.0,
+                        "Runtime": 0.0,
+                        "Query Proportion": q_percent,
+                        "Evid Proportion": e_percent,
+                        "Experiment ID": experiment_id,
+                        "Query_ID": j
+                    })
+            break
+
         # Write the .query and .evid files for this query 
         with open(
             f"{data_path}/{dataset}/{dataset}.query", mode='w'
@@ -119,7 +163,7 @@ for dataset in datasets:
             f"{data_path}/{dataset}/{dataset}.evid", mode='w'
         ) as f:
             f.write(e)
-        
+
         # Get the probability of the evidence
         evid_info = e.split()
         index = 1
@@ -130,12 +174,11 @@ for dataset in datasets:
             evidence[spn.scope()[var_id]] = [val]
             index += 2
         p_evid = spn.log_value(evidence)
-        run_success = True
 
         # Run the queries through the MAP methods, store results
         if "WMB" in methods:
             try:
-                print(f"Starting query {i}")
+                print(f"Starting query {i} (WMB), remaining budget ~{remaining_dataset:.1f}s")
                 start = time.perf_counter()
                 q_var_indices = [int(var) for var in q.split()[1:]]
                 q_vars = [spn.scope()[ind] for ind in q_var_indices]
@@ -147,18 +190,18 @@ for dataset in datasets:
                     ibound=10,
                     iterations=2,
                     query_vars=spn.scope(),
-                    timeout=360
+                    timeout=max(1, int(remaining_dataset)),
                 )
                 if result == 'timeout':
-                    print('Timeout triggered, prob of 0 assigned')
-                    wmb_prob = 0
+                    print('Timeout triggered (WMB), prob of 0 assigned')
+                    wmb_prob = 0.0
                     wmb_est = evidence
                 else:
-                    wmb_est = result[3] 
+                    wmb_est = result[3]
                     wmb_prob = spn.log_value(wmb_est) - p_evid
                     wmb_prob = np.exp(wmb_prob)
                 wmb_time = time.perf_counter() - start
-                print(f"Query runtime: {wmb_time}")
+                print(f"Query runtime (WMB): {wmb_time}")
                 results.append({
                     "Date": datetime_str,
                     "Dataset": dataset,
@@ -175,13 +218,37 @@ for dataset in datasets:
                 print(f"WMB:           {wmb_prob:.4g}")
                 print()
             except Exception as error:
-                print(f"HBP failed with error {error}")
+                print(f"WMB failed with error {error}")
                 print(f"Error type: {type(error).__name__}")
                 run_success = False
-                break 
+                break
+
         if "AAOBF" in methods:
             try:
-                print(f"Starting query {i}")
+                # Recompute remaining budget just before AAOBF
+                elapsed_dataset = time.perf_counter() - dataset_start
+                remaining_dataset = time_budget - elapsed_dataset
+                if remaining_dataset <= 0:
+                    # No time left for AAOBF on this and later queries
+                    for j in range(i, len(queries) + 1):
+                        q_line = queries[j - 1]
+                        q_var_indices = [int(var) for var in q_line.split()[1:]]
+                        results.append({
+                            "Date": datetime_str,
+                            "Dataset": dataset,
+                            "Query": q_var_indices,
+                            "Method": "AAOBF",
+                            "MAP Estimate": "NA",
+                            "MAP Probability": 0.0,
+                            "Runtime": 0.0,
+                            "Query Proportion": q_percent,
+                            "Evid Proportion": e_percent,
+                            "Experiment ID": experiment_id,
+                            "Query_ID": j
+                        })
+                    break
+
+                print(f"Starting query {i} (AAOBF), remaining budget ~{remaining_dataset:.1f}s")
                 start = time.perf_counter()
                 q_var_indices = [int(var) for var in q.split()[1:]]
                 q_vars = [spn.scope()[ind] for ind in q_var_indices]
@@ -193,22 +260,22 @@ for dataset in datasets:
                     ibound=10,
                     iterations=2,
                     query_vars=spn.scope(),
-                    timeout=360
+                    timeout=max(1, int(remaining_dataset)),
                 )
                 if result == 'timeout':
-                    print('Timeout triggered, prob of 0 assigned')
-                    aaobf_prob = 0
+                    print('Timeout triggered (AAOBF), prob of 0 assigned')
+                    aaobf_prob = 0.0
                 else:
                     aaobf_prob = result - p_evid
                     aaobf_prob = np.exp(aaobf_prob)
                 aaobf_time = time.perf_counter() - start
-                print(f"Query runtime: {aaobf_time}")
+                print(f"Query runtime (AAOBF): {aaobf_time}")
                 results.append({
                     "Date": datetime_str,
                     "Dataset": dataset,
                     "Query": q_var_indices,
                     "Method": "AAOBF",
-                    "MAP Estimate": "NA", # Just shoving this here, the aaobf method doesn't output its actual map assignment
+                    "MAP Estimate": "NA",  # AAOBF doesn't output assignment
                     "MAP Probability": aaobf_prob,
                     "Runtime": aaobf_time,
                     "Query Proportion": q_percent,
@@ -216,13 +283,52 @@ for dataset in datasets:
                     "Experiment ID": experiment_id,
                     "Query_ID": i
                 })
-                print(f"AAOBF:           {aaobf_prob:.4g}")
+                print(f"AAOBF:         {aaobf_prob:.4g}")
                 print()
             except Exception as error:
-                print(f"HBP failed with error {error}")
+                print(f"AAOBF failed with error {error}")
                 print(f"Error type: {type(error).__name__}")
                 run_success = False
-                break 
+                break
+
+        # After finishing this query (for all methods), check if budget is exhausted
+        elapsed_dataset = time.perf_counter() - dataset_start
+        remaining_dataset = time_budget - elapsed_dataset
+        if remaining_dataset <= 0:
+            # Fill zeros for all *later* queries
+            for j in range(i + 1, len(queries) + 1):
+                q_line = queries[j - 1]
+                q_var_indices = [int(var) for var in q_line.split()[1:]]
+                if "WMB" in methods:
+                    results.append({
+                        "Date": datetime_str,
+                        "Dataset": dataset,
+                        "Query": q_var_indices,
+                        "Method": "WMB Elimination",
+                        "MAP Estimate": "NA",
+                        "MAP Probability": 0.0,
+                        "Runtime": 0.0,
+                        "Query Proportion": q_percent,
+                        "Evid Proportion": e_percent,
+                        "Experiment ID": experiment_id,
+                        "Query_ID": j
+                    })
+                if "AAOBF" in methods:
+                    results.append({
+                        "Date": datetime_str,
+                        "Dataset": dataset,
+                        "Query": q_var_indices,
+                        "Method": "AAOBF",
+                        "MAP Estimate": "NA",
+                        "MAP Probability": 0.0,
+                        "Runtime": 0.0,
+                        "Query Proportion": q_percent,
+                        "Evid Proportion": e_percent,
+                        "Experiment ID": experiment_id,
+                        "Query_ID": j
+                    })
+            break
+
     if run_success:
         results_dt = pd.DataFrame(results)
         if no_results_file is False:
