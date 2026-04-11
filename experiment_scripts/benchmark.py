@@ -59,6 +59,8 @@ parser.add_argument('-dt', '--date',
 parser.add_argument('-id', '--experiment-id', default=1,
                     help='If running several experiments that you want to be ' \
                     'paired together, assign them the same id')
+parser.add_argument('--no-margs', action='store_true', 
+                    help='Whether the no_margs (no marginals) query files are being used or not')
 
 args = parser.parse_args()
 use_all = args.all_datasets
@@ -82,6 +84,7 @@ try:
 except TypeError:
     print("Not on cluster, n_jobs set to -2")
     n_jobs = -2 
+no_margs = args.no_margs
 
 print(f"Datasets: {datasets}")
 print(f"MAP methods being run: {methods}")
@@ -101,27 +104,46 @@ for dataset in datasets:
 
     # Set up the evidences and queries
     queries, evidences = [], []
-    with open(
-        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map"
-        ) as f:
-        for line_no, line in enumerate(f):
-            if line_no % 2 == 0: 
-                query = [spn.scope()[int(var_id)] for var_id in line.split()]
-                queries.append(query)
-            else: 
-                evid_info = line.split()
-                index = 0
-                evidence = Evidence()
-                while index < len(evid_info):
-                    var_id = int(evid_info[index])
-                    val = int(evid_info[index + 1])
-                    evidence[spn.scope()[var_id]] = [val]
-                    index += 2
-                evidences.append(evidence)
+    if no_margs:
+        with open(
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.map"
+            ) as f:
+            for line_no, line in enumerate(f):
+                if line_no % 2 == 0: 
+                    query = [spn.scope()[int(var_id)] for var_id in line.split()]
+                    queries.append(query)
+                else: 
+                    evid_info = line.split()
+                    index = 0
+                    evidence = Evidence()
+                    while index < len(evid_info):
+                        var_id = int(evid_info[index])
+                        val = int(evid_info[index + 1])
+                        evidence[spn.scope()[var_id]] = [val]
+                        index += 2
+                    evidences.append(evidence)
+    else:
+        with open(
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map"
+            ) as f:
+            for line_no, line in enumerate(f):
+                if line_no % 2 == 0: 
+                    query = [spn.scope()[int(var_id)] for var_id in line.split()]
+                    queries.append(query)
+                else: 
+                    evid_info = line.split()
+                    index = 0
+                    evidence = Evidence()
+                    while index < len(evid_info):
+                        var_id = int(evid_info[index])
+                        val = int(evid_info[index + 1])
+                        evidence[spn.scope()[var_id]] = [val]
+                        index += 2
+                    evidences.append(evidence)
     
     # Loop through each evidence and query combo
     results = []
-    for q, e in zip(queries, evidences):
+    for i, (q, e) in enumerate(zip(queries, evidences), start=1):
         m = [var for var in spn.scope() if var not in q and var not in e]
         mp_est, amp_est, ms_est, hbp_est = ["None"] * 4
         mp_prob, amp_prob, ms_prob, hbp_prob = [0] * 4
@@ -241,7 +263,11 @@ for dataset in datasets:
                     "Method": "Hybrid Belief-Propagation",
                     "MAP Estimate": str({var.id: hbp_est[var] for var in q}),
                     "MAP Probability": hbp_prob,
-                    "Runtime": hbp_time
+                    "Runtime": hbp_time, 
+                    "Query Proportion": q_percent,
+                    "Evid Proportion": e_percent,
+                    "Experiment ID": experiment_id,
+                    "Query_ID": i
                 })
                 print(f"HBP:           {hbp_prob:.4g}")
                 print("MAP Est:", ' '.join([str(hbp_est[v]) for v in q]))
@@ -286,7 +312,11 @@ for dataset in datasets:
                 "Method": f"PAC_MAP_Hamming",
                 "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
                 "MAP Probability": pac_map_prob,
-                "Runtime": pac_map_time
+                "Runtime": pac_map_time,
+                "Query Proportion": q_percent,
+                "Evid Proportion": e_percent,
+                "Experiment ID": experiment_id,
+                "Query_ID": i
             })
             print(f"PAC MAP Hamming:           {pac_map_prob:.4g}")
             print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
@@ -312,10 +342,10 @@ for dataset in datasets:
             print()
     if run_success:
         results_dt = pd.DataFrame(results)
-        results_dt['Query Proportion'] = q_percent
-        results_dt['Evid Proportion'] = e_percent
-        if experiment_id:
-            results_dt['Experiment ID'] = experiment_id
+        # results_dt['Query Proportion'] = q_percent
+        # results_dt['Evid Proportion'] = e_percent
+        # if experiment_id:
+        #     results_dt['Experiment ID'] = experiment_id
         if no_results_file is False:
             file_exists = os.path.isfile(results_filename)
             results_dt.to_csv(results_filename, mode='a', header=not file_exists, index=False)

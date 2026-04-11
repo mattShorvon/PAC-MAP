@@ -109,7 +109,7 @@ def merlin(
                     "-M",
                     query_file,
                     "--time-limit",
-                    str(timeout),
+                    str(900),
                     "--threads",
                     "10",
                     "-v"
@@ -117,7 +117,6 @@ def merlin(
                 capture_output=True,
                 check=True,
                 text=True,
-                timeout=timeout,
             )
             splitted_info = process_info.stdout.strip().split("\n")
             value_line = splitted_info[-2]
