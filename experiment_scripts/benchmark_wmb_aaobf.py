@@ -152,6 +152,7 @@ for dataset in datasets:
                 if result == 'timeout':
                     print('Timeout triggered, prob of 0 assigned')
                     wmb_prob = 0
+                    wmb_est = evidence
                 else:
                     wmb_est = result[3] 
                     wmb_prob = spn.log_value(wmb_est) - p_evid
@@ -161,9 +162,9 @@ for dataset in datasets:
                 results.append({
                     "Date": datetime_str,
                     "Dataset": dataset,
-                    "Query": q_vars,
+                    "Query": q_var_indices,
                     "Method": "WMB Elimination",
-                    "MAP Estimate": wmb_est,
+                    "MAP Estimate": "NA",
                     "MAP Probability": wmb_prob,
                     "Runtime": wmb_time,
                     "Query Proportion": q_percent,
@@ -205,9 +206,9 @@ for dataset in datasets:
                 results.append({
                     "Date": datetime_str,
                     "Dataset": dataset,
-                    "Query": q_vars,
+                    "Query": q_var_indices,
                     "Method": "AAOBF",
-                    "MAP Estimate": evidence, # Just shoving this here, the aaobf method doesn't output its actual map assignment
+                    "MAP Estimate": "NA", # Just shoving this here, the aaobf method doesn't output its actual map assignment
                     "MAP Probability": aaobf_prob,
                     "Runtime": aaobf_time,
                     "Query Proportion": q_percent,
