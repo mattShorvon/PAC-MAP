@@ -15,7 +15,8 @@ def get_method_colors():
         'Max Product': 'npgBlue',        # #4DBBD5
         'PAC_MAP': 'npgGreen',           # #00A087
         'PAC_MAP_Hamming': 'npgNavy',    # #3C5488
-        'ITSELF': 'npgOrange'            # #F39B7F
+        'ITSELF': 'npgOrange',           # #F39B7F
+        'Hybrid Belief-Propagation': 'npgBrown',      # #7E6148
     }
 
 
@@ -86,6 +87,7 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     latex_str += r"\definecolor{npgNavy}{HTML}{3C5488}" + "\n"
     latex_str += r"\definecolor{npgPurple}{HTML}{8491B4}" + "\n"
     latex_str += r"\definecolor{npgOrange}{HTML}{F39B7F}" + "\n"
+    latex_str += r"\definecolor{npgBrown}{HTML}{7E6148}" + "\n"
     latex_str += "\n"
     
     latex_str += r"\begin{tabular}{l@{\hspace{0.1em}}l|lll}" + "\n"
@@ -115,21 +117,24 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
         r"\textcolor{npgBlue}{5}, "
         r"\textcolor{npgGreen}{15}, "
         r"\textcolor{npgNavy}{\textbf{17}}, "
-        r"\textcolor{npgOrange}{3}"  # example count for ITSELF
+        r"\textcolor{npgOrange}{0}"  # example count for ITSELF
+        r"\textcolor{npgBrown}{0}"
         r" & "
         r"\textcolor{npgRed}{11}, "
         r"\textcolor{npgPurple}{1}, "
         r"\textcolor{npgBlue}{4}, "
         r"\textcolor{npgGreen}{12}, "
         r"\textcolor{npgNavy}{\textbf{14}}, "
-        r"\textcolor{npgOrange}{2}"
+        r"\textcolor{npgOrange}{0}"
+        r"\textcolor{npgBrown}{0}"
         r" & "
         r"\textcolor{npgRed}{\textbf{14}}, "
         r"\textcolor{npgPurple}{0}, "
         r"\textcolor{npgBlue}{4}, "
         r"\textcolor{npgGreen}{8}, "
         r"\textcolor{npgNavy}{10}, "
-        r"\textcolor{npgOrange}{1}"
+        r"\textcolor{npgOrange}{0}"
+        r"\textcolor{npgBrown}{0}"
         r" \\"
         "\n"
     )
@@ -147,6 +152,7 @@ def create_colored_latex_table(rankings_df, method_order, caption, label):
     latex_str += r"\textcolor{npgGreen}{PAC-MAP} \quad" + "\n"
     latex_str += r"\textcolor{npgNavy}{Smooth-PAC-MAP}" + "\n"
     latex_str += r"\textcolor{npgOrange}{ITSELF}" + "\n"
+    latex_str += r"\textcolor{npgBrown}{HBP}" + "\n"
     latex_str += r"\end{center}" + "\n"
     latex_str += r"\end{table*}" + "\n"
     
@@ -214,7 +220,7 @@ all_results = all_results.sort_values(
 #     (all_results["Query Proportion"] == 0.1) &
 #     (all_results["Evid Proportion"] == 0.9)
 # )
-# good_cols = ['Method', 'MAP Estimate', 'MAP_Estimate_norm', 'MAP Probability', 'Query Proportion', 'Evid Proportion', 'Query_norm', 'Query']
+# good_cols = ['Method', 'MAP Estimate', 'MAP_Estimate_norm', 'MAP Probability', 'Query Proportion', 'Evid Proportion', 'Query_norm', 'Query', 'Rank']
 # print(
 #     all_results.loc[mask, good_cols]
 #         .to_string()

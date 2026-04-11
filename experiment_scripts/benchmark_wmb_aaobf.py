@@ -4,12 +4,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from spn.io.file import from_file
-from spn.actions.learn import Learn
-from spn.learn import gens
-from spn.data.partitioned_data import PartitionedData
-from spn.actions.map_algorithms.independent_map import independent_map
-from spn.actions.map_algorithms.merlin import merlin, make_uai_file, markov_code
-from spn.utils.graph import full_binarization
+from spn.actions.map_algorithms.merlin import merlin, make_uai_file
 from spn.utils.evidence import Evidence
 import argparse
 from datetime import datetime
@@ -152,16 +147,26 @@ for dataset in datasets:
                         "Experiment ID": experiment_id,
                         "Query_ID": j
                     })
+                if "RBFAOO" in methods:
+                    results.append({
+                        "Date": datetime_str,
+                        "Dataset": dataset,
+                        "Query": q_var_indices,
+                        "Method": "RBFAOO",
+                        "MAP Estimate": "NA",
+                        "MAP Probability": 0.0,
+                        "Runtime": 0.0,
+                        "Query Proportion": q_percent,
+                        "Evid Proportion": e_percent,
+                        "Experiment ID": experiment_id,
+                        "Query_ID": j
+                    })
             break
 
         # Write the .query and .evid files for this query 
-        with open(
-            f"{data_path}/{dataset}/{dataset}.query", mode='w'
-        ) as f:
+        with open(f"{data_path}/{dataset}/{dataset}.query", mode='w') as f:
             f.write(q)
-        with open(
-            f"{data_path}/{dataset}/{dataset}.evid", mode='w'
-        ) as f:
+        with open(f"{data_path}/{dataset}/{dataset}.evid", mode='w') as f:
             f.write(e)
 
         # Get the probability of the evidence
@@ -175,7 +180,7 @@ for dataset in datasets:
             index += 2
         p_evid = spn.log_value(evidence)
 
-        # Run the queries through the MAP methods, store results
+        # -------- WMB --------
         if "WMB" in methods:
             try:
                 print(f"Starting query {i} (WMB), remaining budget ~{remaining_dataset:.1f}s")
@@ -223,13 +228,81 @@ for dataset in datasets:
                 run_success = False
                 break
 
-        if "RBFAOO" in methods:
+        # -------- AAOBF --------
+        if "AAOBF" in methods and run_success:
+            try:
+                # Recompute remaining budget just before AAOBF
+                elapsed_dataset = time.perf_counter() - dataset_start
+                remaining_dataset = time_budget - elapsed_dataset
+                if remaining_dataset <= 0:
+                    for j in range(i, len(queries) + 1):
+                        q_line = queries[j - 1]
+                        q_var_indices = [int(var) for var in q_line.split()[1:]]
+                        results.append({
+                            "Date": datetime_str,
+                            "Dataset": dataset,
+                            "Query": q_var_indices,
+                            "Method": "AAOBF",
+                            "MAP Estimate": "NA",
+                            "MAP Probability": 0.0,
+                            "Runtime": 0.0,
+                            "Query Proportion": q_percent,
+                            "Evid Proportion": e_percent,
+                            "Experiment ID": experiment_id,
+                            "Query_ID": j
+                        })
+                    break
+
+                print(f"Starting query {i} (AAOBF), remaining budget ~{remaining_dataset:.1f}s")
+                start = time.perf_counter()
+                q_var_indices = [int(var) for var in q.split()[1:]]
+                q_vars = [spn.scope()[ind] for ind in q_var_indices]
+                result = merlin(
+                    evidence_file=f"{data_path}/{dataset}/{dataset}.evid",
+                    query_file=f"{data_path}/{dataset}/{dataset}.query",
+                    uai_file=f"{data_path}/{dataset}/{dataset}.uai",
+                    algorithm='any-aaobf',
+                    ibound=10,
+                    iterations=2,
+                    query_vars=spn.scope(),
+                    timeout=max(1, int(remaining_dataset)),
+                )
+                if result == 'timeout':
+                    print('Timeout triggered (AAOBF), prob of 0 assigned')
+                    aaobf_prob = 0.0
+                else:
+                    aaobf_prob = result - p_evid
+                    aaobf_prob = np.exp(aaobf_prob)
+                aaobf_time = time.perf_counter() - start
+                print(f"Query runtime (AAOBF): {aaobf_time}")
+                results.append({
+                    "Date": datetime_str,
+                    "Dataset": dataset,
+                    "Query": q_var_indices,
+                    "Method": "AAOBF",
+                    "MAP Estimate": "NA",
+                    "MAP Probability": aaobf_prob,
+                    "Runtime": aaobf_time,
+                    "Query Proportion": q_percent,
+                    "Evid Proportion": e_percent,
+                    "Experiment ID": experiment_id,
+                    "Query_ID": i
+                })
+                print(f"AAOBF:         {aaobf_prob:.4g}")
+                print()
+            except Exception as error:
+                print(f"AAOBF failed with error {error}")
+                print(f"Error type: {type(error).__name__}")
+                run_success = False
+                break
+
+        # -------- RBFAOO --------
+        if "RBFAOO" in methods and run_success:
             try:
                 # Recompute remaining budget just before RBFAOO
                 elapsed_dataset = time.perf_counter() - dataset_start
                 remaining_dataset = time_budget - elapsed_dataset
                 if remaining_dataset <= 0:
-                    # No time left for RBFAOO on this and later queries
                     for j in range(i, len(queries) + 1):
                         q_line = queries[j - 1]
                         q_var_indices = [int(var) for var in q_line.split()[1:]]
@@ -274,8 +347,8 @@ for dataset in datasets:
                     "Date": datetime_str,
                     "Dataset": dataset,
                     "Query": q_var_indices,
-                    "Method": "rbfaoo",
-                    "MAP Estimate": "NA",  # rbfaoo doesn't output assignment
+                    "Method": "RBFAOO",
+                    "MAP Estimate": "NA",
                     "MAP Probability": rbfaoo_prob,
                     "Runtime": rbfaoo_time,
                     "Query Proportion": q_percent,
@@ -283,7 +356,7 @@ for dataset in datasets:
                     "Experiment ID": experiment_id,
                     "Query_ID": i
                 })
-                print(f"RBFAOO:         {rbfaoo_prob:.4g}")
+                print(f"RBFAOO:        {rbfaoo_prob:.4g}")
                 print()
             except Exception as error:
                 print(f"RBFAOO failed with error {error}")
@@ -319,6 +392,20 @@ for dataset in datasets:
                         "Dataset": dataset,
                         "Query": q_var_indices,
                         "Method": "AAOBF",
+                        "MAP Estimate": "NA",
+                        "MAP Probability": 0.0,
+                        "Runtime": 0.0,
+                        "Query Proportion": q_percent,
+                        "Evid Proportion": e_percent,
+                        "Experiment ID": experiment_id,
+                        "Query_ID": j
+                    })
+                if "RBFAOO" in methods:
+                    results.append({
+                        "Date": datetime_str,
+                        "Dataset": dataset,
+                        "Query": q_var_indices,
+                        "Method": "RBFAOO",
                         "MAP Estimate": "NA",
                         "MAP Probability": 0.0,
                         "Runtime": 0.0,

@@ -119,6 +119,7 @@ def merlin(
                 capture_output=True,
                 check=True,
                 text=True,
+                timeout=timeout
             )
             splitted_info = process_info.stdout.strip().split("\n")
             value_line = splitted_info[-2]
