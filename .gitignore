@@ -213,6 +213,7 @@ tags
 /20-datasets-big
 /20-datasets-nospn
 /big_datasets
+/ijcai_reviews
 
 # results files
 *.csv

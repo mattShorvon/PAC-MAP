@@ -107,7 +107,7 @@ for dataset in datasets:
             evidences.append(line.strip('\n'))
 
     # Global time budget (seconds) per dataset
-    time_budget = 120.0
+    time_budget = 3600.0
     dataset_start = time.perf_counter()
 
     # Loop through each evidence and query combo
@@ -223,13 +223,13 @@ for dataset in datasets:
                 run_success = False
                 break
 
-        if "AAOBF" in methods:
+        if "RBFAOO" in methods:
             try:
-                # Recompute remaining budget just before AAOBF
+                # Recompute remaining budget just before RBFAOO
                 elapsed_dataset = time.perf_counter() - dataset_start
                 remaining_dataset = time_budget - elapsed_dataset
                 if remaining_dataset <= 0:
-                    # No time left for AAOBF on this and later queries
+                    # No time left for RBFAOO on this and later queries
                     for j in range(i, len(queries) + 1):
                         q_line = queries[j - 1]
                         q_var_indices = [int(var) for var in q_line.split()[1:]]
@@ -237,7 +237,7 @@ for dataset in datasets:
                             "Date": datetime_str,
                             "Dataset": dataset,
                             "Query": q_var_indices,
-                            "Method": "AAOBF",
+                            "Method": "RBFAOO",
                             "MAP Estimate": "NA",
                             "MAP Probability": 0.0,
                             "Runtime": 0.0,
@@ -248,7 +248,7 @@ for dataset in datasets:
                         })
                     break
 
-                print(f"Starting query {i} (AAOBF), remaining budget ~{remaining_dataset:.1f}s")
+                print(f"Starting query {i} (RBFAOO), remaining budget ~{remaining_dataset:.1f}s")
                 start = time.perf_counter()
                 q_var_indices = [int(var) for var in q.split()[1:]]
                 q_vars = [spn.scope()[ind] for ind in q_var_indices]
@@ -256,37 +256,37 @@ for dataset in datasets:
                     evidence_file=f"{data_path}/{dataset}/{dataset}.evid",
                     query_file=f"{data_path}/{dataset}/{dataset}.query",
                     uai_file=f"{data_path}/{dataset}/{dataset}.uai",
-                    algorithm='any-aaobf',
+                    algorithm='rbfaoo',
                     ibound=10,
                     iterations=2,
                     query_vars=spn.scope(),
                     timeout=max(1, int(remaining_dataset)),
                 )
                 if result == 'timeout':
-                    print('Timeout triggered (AAOBF), prob of 0 assigned')
-                    aaobf_prob = 0.0
+                    print('Timeout triggered (RBFAOO), prob of 0 assigned')
+                    rbfaoo_prob = 0.0
                 else:
-                    aaobf_prob = result - p_evid
-                    aaobf_prob = np.exp(aaobf_prob)
-                aaobf_time = time.perf_counter() - start
-                print(f"Query runtime (AAOBF): {aaobf_time}")
+                    rbfaoo_prob = result - p_evid
+                    rbfaoo_prob = np.exp(rbfaoo_prob)
+                rbfaoo_time = time.perf_counter() - start
+                print(f"Query runtime (RBFAOO): {rbfaoo_time}")
                 results.append({
                     "Date": datetime_str,
                     "Dataset": dataset,
                     "Query": q_var_indices,
-                    "Method": "AAOBF",
-                    "MAP Estimate": "NA",  # AAOBF doesn't output assignment
-                    "MAP Probability": aaobf_prob,
-                    "Runtime": aaobf_time,
+                    "Method": "rbfaoo",
+                    "MAP Estimate": "NA",  # rbfaoo doesn't output assignment
+                    "MAP Probability": rbfaoo_prob,
+                    "Runtime": rbfaoo_time,
                     "Query Proportion": q_percent,
                     "Evid Proportion": e_percent,
                     "Experiment ID": experiment_id,
                     "Query_ID": i
                 })
-                print(f"AAOBF:         {aaobf_prob:.4g}")
+                print(f"RBFAOO:         {rbfaoo_prob:.4g}")
                 print()
             except Exception as error:
-                print(f"AAOBF failed with error {error}")
+                print(f"RBFAOO failed with error {error}")
                 print(f"Error type: {type(error).__name__}")
                 run_success = False
                 break

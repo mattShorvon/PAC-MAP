@@ -91,7 +91,7 @@ def merlin(
                     continue
 
             return "{:.4f}".format(runtime), final_value, induced_width, evidence
-        else:
+        elif algorithm == 'any-aaobf':
             print(
                 f"{AAOBF_PATH} -a any-aaobf --input-file {uai_file} --evidence-file {evidence_file} -M {query_file} -F uai"
             )
@@ -109,9 +109,11 @@ def merlin(
                     "-M",
                     query_file,
                     "--time-limit",
-                    str(900),
+                    str(timeout),
                     "--threads",
-                    "10",
+                    "1",
+                    "--cache-size", 
+                    "256m",
                     "-v"
                 ],
                 capture_output=True,
@@ -120,6 +122,40 @@ def merlin(
             )
             splitted_info = process_info.stdout.strip().split("\n")
             value_line = splitted_info[-2]
+            final_value = float(re.sub("[()]", "", value_line.split(" ")[-1]))
+            return final_value
+        else:
+            print(
+                f"{AAOBF_PATH} -a rbfaoo --input-file {uai_file} --evidence-file {evidence_file} -M {query_file} -F uai"
+            )
+            process_info = subprocess.run(
+                [
+                    AAOBF_PATH,
+                    "-a",
+                    "rbfaoo",
+                    "--input-file",
+                    uai_file,
+                    "--evidence-file",
+                    evidence_file,
+                    "-F",
+                    "uai",
+                    "-M",
+                    query_file,
+                    "--time-limit",
+                    str(timeout),
+                    "--threads",
+                    "1",
+                    "--cache-size", 
+                    "256m",
+                    "-v"
+                ],
+                capture_output=True,
+                check=True,
+                text=True,
+                timeout=timeout
+            )
+            splitted_info = process_info.stdout.strip().split("\n")
+            value_line = splitted_info[-4]
             final_value = float(re.sub("[()]", "", value_line.split(" ")[-1]))
             return final_value
     except subprocess.TimeoutExpired:
