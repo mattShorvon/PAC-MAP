@@ -259,5 +259,15 @@
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },
+        {
+            "name":"Python: rankings_grid.py ijcai reviews",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/ijcai_reviews/rankings_grid_ijcai_revs.py",
+            "console": "integratedTerminal",
+            "args": ["-ids", "ijcai_reviews_2"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        },
     ]
 }
