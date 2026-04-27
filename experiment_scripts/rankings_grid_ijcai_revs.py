@@ -10,51 +10,56 @@ def get_method_colors():
     """Define colors for each method using ggsci NPG palette."""
     # NPG (Nature Publishing Group) palette from ggsci
     return {
-        'WMB Elimination': 'npgRed',      # #E64B35
         'AAOBF': 'npgPurple',             # #8491B4
-        'RBFAOO': 'npgGreen',             # #00A087
-        'PAC_MAP_Hamming': 'npgNavy',     # #3C5488
-        'ITSELF': 'npgOrange',            # #F39B7F
         'Hybrid Belief-Propagation': 'npgBrown',  # #7E6148
+        'ITSELF': 'npgOrange',            # #F39B7F
+        'PAC_MAP_Hamming': 'npgNavy',     # #3C5488
+        'RBFAOO': 'npgGreen',             # #00A087
+        'WMB Elimination': 'npgRed',      # #E64B35
     }
 
 
 def format_rank_list_with_colors(rank_list, method_order=None):
     """
-    Format list of ranks with LaTeX colors, bolding winners.
-    
-    Args:
-        rank_list: List of ranks
-        method_order: List of methods in alphabetical order
+    Format list of ranks with LaTeX colors and \mnum/\msep for alignment.
+
+    Each cell becomes:
+      \mnum{$\textcolor{color}{<rank>}$}\msep\mnum{$\textcolor{color}{<rank>}$}...
     """
     if rank_list is None or (isinstance(rank_list, float) and np.isnan(rank_list)):
-        return '-'
+        # Whole cell empty
+        return r"\mnum{--}"
     
     method_colors = get_method_colors()
     formatted = []
     
     # Find minimum rank (winner)
-    valid_ranks = [r for r in rank_list if r is not None]
+    valid_ranks = [r for r in rank_list if r is not None and not (isinstance(r, float) and np.isnan(r))]
     if not valid_ranks:
-        return '-'
+        return r"\mnum{--}"
     min_rank = min(valid_ranks)
     
-    # Handle list of ranks
     for i, rank in enumerate(rank_list):
-        if rank is None:
-            formatted.append('-')
+        method = method_order[i] if method_order and i < len(method_order) else None
+        color = method_colors.get(method, 'black') if method else 'black'
+
+        # Missing/absent method for this dataset
+        if rank is None or (isinstance(rank, float) and np.isnan(rank)):
+            inner = rf"$\textcolor{{{color}}}{{--}}$"
+            formatted.append(rf"\mnum{{{inner}}}")
+            continue
+
+        # Inner colored number in math mode
+        if rank == min_rank:
+            inner = rf"$\textcolor{{{color}}}{{\mathbf{{{rank:.1f}}}}}$"
         else:
-            method = method_order[i] if i < len(method_order) else None
-            color = method_colors.get(method, 'black') if method else 'black'
-            
-            # Format: $\textcolor{blue}{\mathbf{1.0}}$ for winners
-            # Format: $\textcolor{blue}{1.0}$ for non-winners
-            if rank == min_rank:
-                formatted.append(f"$\\textcolor{{{color}}}{{\\mathbf{{{rank:.1f}}}}}$")
-            else:
-                formatted.append(f"$\\textcolor{{{color}}}{{{rank:.1f}}}$")
+            inner = rf"$\textcolor{{{color}}}{{{rank:.1f}}}$"
+
+        # Fixed-width box for vertical alignment
+        formatted.append(rf"\mnum{{{inner}}}")
     
-    return ', '.join(formatted)
+    # Separate entries with \msep (no commas)
+    return r"\msep".join(formatted)
 
 def create_colored_latex_table(
     rankings_df,
@@ -79,11 +84,13 @@ def create_colored_latex_table(
         )
     
     # Build LaTeX manually with tabularx for wrapping
-    latex_str = r"\begin{table*}[ht]" + "\n"
+    latex_str = r"\begin{table}[t!]" + "\n"
+    latex_str += r"\setlength{\linewidth}{\textwidth}" + "\n"
+    latex_str += r"\setlength{\hsize}{\textwidth}" + "\n"
     latex_str += r"\centering" + "\n"
-    latex_str += r"\footnotesize" + "\n"
-    latex_str += f"\\caption{{{caption}}}\n"
-    latex_str += f"\\label{{{label}}}\n"
+    latex_str += r"\scriptsize" + "\n"
+    latex_str += f"%\caption{{{caption}}}\n"
+    latex_str += f"%\label{{{label}}}\n"
     
     # Define ggsci NPG colors
     latex_str += r"% Define ggsci NPG palette colors" + "\n"
@@ -96,7 +103,8 @@ def create_colored_latex_table(
     latex_str += r"\definecolor{npgBrown}{HTML}{7E6148}" + "\n"
     latex_str += "\n"
     
-    latex_str += r"\begin{tabular}{l@{\hspace{0.1em}}l|lll}" + "\n"
+    # latex_str += r"\begin{tabular}{l@{\hspace{0.1em}}l|lll}" + "\n"
+    latex_str += r"\begin{tabular}{l @{\hspace{1em}} r|@{\hspace{1.2em}} c @{\hspace{2.0em}} c @{\hspace{2.0em}} c}" + "\n"
     latex_str += r"\toprule" + "\n"
 
     # Header
@@ -107,12 +115,11 @@ def create_colored_latex_table(
     for _, row in rankings_df_formatted.iterrows():
         dataset = row['Dataset']
         vals = [str(row[col]) for col in val_columns]
-        if dataset == "pumsb_star":
-            latex_str += r"\texttt{pumsb\_star} & " + ' & '.join(vals) + r" \\" + "\n"
-        elif dataset == "ocr_letters":
-            latex_str += r"\texttt{ocr\_letters} & " + ' & '.join(vals) + r" \\" + "\n"
-        else:
-            latex_str += r"\texttt{" + f"{dataset}" + r"} & " + ' & '.join(vals) + r" \\" + "\n"
+
+        # Escape LaTeX-meaningful characters in dataset names
+        dataset_tex = str(dataset).replace('_', r'\_')
+
+        latex_str += r"\texttt{" + dataset_tex + r"} & " + ' & '.join(vals) + r" \\" + "\n"
 
     # --- Dynamic summary row: No. Times Ranked Highest ---
     latex_str += r"\midrule" + "\n"
@@ -132,9 +139,10 @@ def create_colored_latex_table(
         for method in method_order:
             color = method_colors.get(method, 'black')
             count = counts_map.get(method, 0)
-            pieces.append(rf"\textcolor{{{color}}}{{{count}}}")
+            inner = rf"$\textcolor{{{color}}}{{{count}}}$"
+            pieces.append(rf"\mnum{{{inner}}}")
 
-        latex_str += ", ".join(pieces)
+        latex_str += r"\msep".join(pieces)
         if k < len(exp_ids) - 1:
             latex_str += " & "
         else:
@@ -145,14 +153,21 @@ def create_colored_latex_table(
 
     # --- Legend with current methods and colors ---
     latex_str += r"\begin{center}" + "\n" 
-    latex_str += r"\footnotesize" + "\n" 
+    latex_str += r"\scriptsize" + "\n" 
     latex_str += r"\textbf{Method:} \quad" + "\n"
 
-    for method, color in method_colors.items():
-        latex_str += rf"\textcolor{{{color}}}{{{method}}} \quad" + "\n"
+    display_labels = {
+        "WMB Elimination": "WMB",
+        "Hybrid Belief-Propagation": "HBP",
+        "PAC_MAP_Hamming": "smooth-PACMAP"
+    }
+    for method in method_order:
+        color = method_colors[method]
+        label = display_labels.get(method, method)
+        latex_str += rf"\textcolor{{{color}}}{{{label}}} \quad" + "\n"
 
     latex_str += r"\end{center}" + "\n"
-    latex_str += r"\end{table*}" + "\n"
+    latex_str += r"\end{table}" + "\n"
     
     # Add package requirements at the top
     latex_note = r"% Requires \usepackage{xcolor} and \usepackage{tabularx} in your LaTeX preamble" + "\n"
@@ -241,11 +256,37 @@ rank1_counts = ranks_aggregated[ranks_aggregated['Rank'] == 1.0].groupby(
     ['Query Proportion', 'Method']
 ).size().reset_index(name='Rank_1_Count')
 
-# Create rankings grid manually - alphabetical order
-method_order = sorted(all_results['Method'].unique())
+# Create rankings grid manually
+# method_order = sorted(all_results['Method'].unique())
+method_order = [
+    'WMB Elimination',
+    'AAOBF',
+    'RBFAOO',
+    'Hybrid Belief-Propagation',
+    'ITSELF',
+    'PAC_MAP_Hamming',  # smooth-PACMAP shown last
+]
 rankings_per_cell = []
 q_proportions = ranks_aggregated['Query Proportion'].unique()
-for dataset in ranks_aggregated['Dataset'].unique():
+dataset_order = [
+    'bnetflix',
+    'connect4',
+    'dna',
+    'jester',
+    'kosarek',
+    'pumsb_star',
+    'vote',
+    'nltcs',
+    'bridges_version1',
+    'tae',
+    'hayes-roth_train',
+    'iris',
+]
+# for dataset in ranks_aggregated['Dataset'].unique():
+for dataset in dataset_order:
+    if dataset not in ranks_aggregated['Dataset'].unique():
+        print(f"Dataset {dataset} is not in this results set, moving to next")
+        continue 
     row_data = {'Dataset': dataset}
     
     for q in q_proportions:
@@ -277,7 +318,7 @@ rankings_df = rankings_df.rename(columns={
     q_proportions[1]: '25% Query',
     q_proportions[2]: '50% Query'
 })
-rankings_df['Dimension'] = [111, 123, 100, 100, 500, 126, 180, 100, 64, 190, 17, 5]
+rankings_df['Dimension'] = [100, 126, 180, 100, 190, 163, 17, 16, 10,  6,  5, 5]
 rankings_df = rankings_df[['Dataset', 'Dimension', '10% Query', '25% Query', '50% Query']]
 print(rankings_df)
 print(f"\nMethod order: {method_order}")
