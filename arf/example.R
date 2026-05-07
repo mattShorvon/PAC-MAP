@@ -1,0 +1,22 @@
+suppressPackageStartupMessages({
+    library(data.table)
+    library(ranger)
+    library(stringr)
+    library(foreach)
+    library(truncnorm)
+})
+
+source("arf/adversarial_rf.R")
+source("arf/expct.R")
+source("arf/forde.R")
+source("arf/forge.R")
+source("arf/impute.R")
+source("arf/lik.R")
+source("arf/shortcut_functions.R")
+source("arf/utils.R")
+
+data <- data.table(iris)
+arf <- adversarial_rf(data)
+params <- forde(arf, data)
+evi <- data.frame(Species = "setosa", Sepal.Length = "(6, Inf)")
+cforde(params, evi)
