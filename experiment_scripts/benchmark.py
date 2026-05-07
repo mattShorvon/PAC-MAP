@@ -61,6 +61,10 @@ parser.add_argument('-id', '--experiment-id', default=1,
                     'paired together, assign them the same id')
 parser.add_argument('--no-margs', action='store_true', 
                     help='Whether the no_margs (no marginals) query files are being used or not')
+parser.add_argument('--sample-cap', type=int, default=100000,
+                    help='sample_cap parameter for pacmap and pacmap-h')
+parser.add_argument('--batch-size', type=int, default=5000,
+                    help='batch_size parameter for pacmap and pacmap-h')
 
 args = parser.parse_args()
 use_all = args.all_datasets
@@ -85,6 +89,8 @@ except TypeError:
     print("Not on cluster, n_jobs set to -2")
     n_jobs = -2 
 no_margs = args.no_margs
+sample_cap = args.sample_cap
+batch_size = args.batch_size
 
 print(f"Datasets: {datasets}")
 print(f"MAP methods being run: {methods}")
@@ -93,7 +99,7 @@ print(f"MAP methods being run: {methods}")
 for dataset in datasets:
     # Set up the SPN
     print(f"Running benchmark on dataset {dataset}")
-    spn_path = Path(f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.spn")
+    spn_path = Path(f"{data_path}/{dataset}/{dataset}.spn")
     try:
         spn = from_file(spn_path)
         print(f"SPN loaded: {spn.vars()} vars and {spn.arcs()} arcs")
@@ -300,8 +306,8 @@ for dataset in datasets:
         if "PACMAP-H" in methods:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map_hamming(
-                spn, spn_path, e, m, batch_size=5000, err_tol=0.01, fail_prob=0.01,
-                sample_cap=100000, n_jobs=n_jobs
+                spn, spn_path, e, m, batch_size=batch_size, err_tol=0.01, fail_prob=0.01,
+                sample_cap=sample_cap, n_jobs=n_jobs
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
