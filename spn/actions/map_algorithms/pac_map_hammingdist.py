@@ -171,8 +171,8 @@ def pac_map_hamming(
         sampling_evidence = None
 
     # Initialize with warm start if you've given one
-    candidate_list = list(warm_start_cands) if warm_start_cands else []
-    probs = list(warm_start_probs) if warm_start_probs else []
+    new_candidates = list(warm_start_cands) if warm_start_cands else []
+    new_probs = list(warm_start_probs) if warm_start_probs else []
     seen_hashes = set()
     
     # Add warm_start candidates to the set of seen samples 
@@ -181,22 +181,28 @@ def pac_map_hamming(
             sample_hash = sample_evid_to_tuple(cand)  
             seen_hashes.add(sample_hash)
     
-    # Initialize p_hat and q_hat
-    if len(probs) > 0:
-        p_hat = max(probs)
-        q_hat_idx = np.argmax(probs)
-        q_hat = candidate_list[q_hat_idx]
+    # Initialize p_hat, q_hat and sum_probs
+    if len(new_probs) > 0:
+        p_hat = max(new_probs)
+        q_hat_idx = np.argmax(new_probs)
+        q_hat = new_candidates[q_hat_idx]
+        sum_probs = sum(new_probs)
     else:
         p_hat = float('-inf')
         q_hat = None
+        sum_probs = 0
     
-    # Initialise m, p_tick and M
+    # Initialise variables
     p_tick = 0
     m = 0
     M = float('inf')
 
     try:
         while m < M:
+            # Reset new_candidates and new_probs
+            new_candidates = []
+            new_probs = []
+
             # Draw new samples
             new_samples, m = explore(
                 working_path, 
@@ -207,7 +213,7 @@ def pac_map_hamming(
                 n_jobs
             )
 
-            # Add samples that haven't been seen before to candidate_list 
+            # Add samples that haven't been seen before to new_candidates 
             # (uses hashset for O(1) membership check)
             unseen_samples = []
             for sample_dict in new_samples:
@@ -217,24 +223,24 @@ def pac_map_hamming(
                 if sample_hash not in seen_hashes:
                     seen_hashes.add(sample_hash)
                     unseen_samples.append(filtered_sample)
-                    candidate_list.append(filtered_sample)
+                    new_candidates.append(filtered_sample)
             
             # Compute likelihoods for new, unseen samples
-            new_probs = np.exp(
+            res = np.exp(
                 likelihood_multiproc(working_path, unseen_samples, n_jobs=n_jobs)
             )
-            probs.extend(new_probs)
+            new_probs.extend(res)
 
             # Check if you need to update the best candidate
-            if max(probs) > p_hat:
-                p_hat = max(probs)
-                q_hat_idx = np.argmax(probs)
-                q_hat = candidate_list[q_hat_idx]
+            if max(new_probs) > p_hat:
+                p_hat = max(new_probs)
+                q_hat_idx = np.argmax(new_probs)
+                q_hat = new_candidates[q_hat_idx]
             
             # Search in a hamming ball around the top sample
             new_samples = exploit(q_hat, evidence, h_radius)
 
-            # Add samples that haven't been seen before to candidate_list 
+            # Add samples that haven't been seen before to new_candidates 
             # (uses hashset for O(1) membership check)
             unseen_samples = []
             for sample_dict in new_samples:
@@ -244,24 +250,25 @@ def pac_map_hamming(
                 if sample_hash not in seen_hashes:
                     seen_hashes.add(sample_hash)
                     unseen_samples.append(filtered_sample)
-                    candidate_list.append(filtered_sample)
+                    new_candidates.append(filtered_sample)
             
             # Compute likelihoods for new, unseen samples
             if unseen_samples:
-                new_probs = np.exp(
+                res = np.exp(
                     likelihood_multiproc(working_path, unseen_samples, n_jobs=n_jobs)
                 )
-                probs.extend(new_probs)
+                new_probs.extend(res)
 
                 # Check if you need to update the best candidate
-                if max(probs) > p_hat:
-                    p_hat = max(probs)
-                    q_hat_idx = np.argmax(probs)
-                    q_hat = candidate_list[q_hat_idx]
+                if max(new_probs) > p_hat:
+                    p_hat = max(new_probs)
+                    q_hat_idx = np.argmax(new_probs)
+                    q_hat = new_candidates[q_hat_idx]
             
             # Check if you can issue the PAC certificate, currently doing this in 
             # prob space rather than log lik space
-            p_tick = 1 - sum(probs)
+            sum_probs += sum(new_probs)
+            p_tick = 1 - sum_probs
             if p_tick <= p_hat/(1 - err_tol):
                 M = 0
             else:
