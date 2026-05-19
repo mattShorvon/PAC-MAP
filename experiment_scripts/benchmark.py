@@ -15,9 +15,7 @@ from spn.actions.map_algorithms.argmax_product import (
     argmax_product_with_evidence_and_marginalized,
 )
 from spn.actions.map_algorithms.max_search import max_search, forward_checking
-from spn.actions.map_algorithms.pac_map import pac_map
-from spn.actions.map_algorithms.pac_map_hammingdist import pac_map_hamming
-from spn.actions.map_algorithms.pac_map_topk import pac_map_topk
+from spn.actions.map_algorithms.pac_map_hammingdist import pac_map
 from experiment_scripts.lbp import lbp
 from spn.utils.graph import full_binarization
 from spn.utils.evidence import Evidence
@@ -61,9 +59,9 @@ parser.add_argument('-id', '--experiment-id', default=1,
                     'paired together, assign them the same id')
 parser.add_argument('--no-margs', action='store_true', 
                     help='Whether the no_margs (no marginals) query files are being used or not')
-parser.add_argument('--sample-cap', type=int, default=100000,
+parser.add_argument('--sample-cap', type=int, default=250000,
                     help='sample_cap parameter for pacmap and pacmap-h')
-parser.add_argument('--batch-size', type=int, default=5000,
+parser.add_argument('--batch-size', type=int, default=1250,
                     help='batch_size parameter for pacmap and pacmap-h')
 
 args = parser.parse_args()
@@ -217,7 +215,11 @@ for dataset in datasets:
                 "Method": "ArgMax Product",
                 "MAP Estimate": str({var.id: amp_est[var] for var in q}),
                 "MAP Probability": amp_prob,
-                "Runtime": amp_time
+                "Runtime": amp_time,
+                "Query Proportion": q_percent,
+                "Evid Proportion": e_percent,
+                "Experiment ID": experiment_id,
+                "Query_ID": i
             })
             print(f"AMP:           {amp_prob:.4g}")
             print("MAP Est:", ' '.join([str(amp_est[v]) for v in q]))
@@ -286,8 +288,8 @@ for dataset in datasets:
         if "PACMAP" in methods:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map(
-                spn, spn_path, e, m, batch_size=5000, err_tol=0.01, fail_prob=0.01,
-                sample_cap=100000, n_jobs=n_jobs
+                spn, spn_path, e, m, batch_size=batch_size, err_tol=0.01, fail_prob=0.01,
+                sample_cap=sample_cap, n_jobs=n_jobs, mode='vanilla'
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start
@@ -305,9 +307,9 @@ for dataset in datasets:
             print()
         if "PACMAP-H" in methods:
             start = time.perf_counter()
-            pac_map_est, pac_map_prob = pac_map_hamming(
+            pac_map_est, pac_map_prob = pac_map(
                 spn, spn_path, e, m, batch_size=batch_size, err_tol=0.01, fail_prob=0.01,
-                sample_cap=sample_cap, n_jobs=n_jobs
+                sample_cap=sample_cap, n_jobs=n_jobs, mode='smooth'
             )
             # pac_map_prob = spn.log_value(pac_map_est)
             pac_map_time = time.perf_counter() - start

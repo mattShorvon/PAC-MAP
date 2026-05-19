@@ -124,7 +124,7 @@ def exploit_bitwise(q_hat, evidence, h_radius=1):
     
     return neighbours
 
-def pac_map_hamming(
+def pac_map(
         spn: SPN, 
         spn_path: Path,
         evidence: Evidence, 
@@ -136,7 +136,8 @@ def pac_map_hamming(
         sample_cap: int = 50000, 
         n_jobs: int = -1,
         warm_start_cands: List[Evidence] = None,
-        warm_start_probs: List[float] = None
+        warm_start_probs: List[float] = None, 
+        mode = 'smooth'
         ) -> Tuple[Evidence, float]:
     
     # Validate warm start inputs
@@ -237,33 +238,34 @@ def pac_map_hamming(
                 q_hat_idx = np.argmax(new_probs)
                 q_hat = new_candidates[q_hat_idx]
             
-            # Search in a hamming ball around the top sample
-            new_samples = exploit(q_hat, evidence, h_radius)
+            if mode == 'smooth':
+                # Search in a hamming ball around the top sample
+                new_samples = exploit(q_hat, evidence, h_radius)
 
-            # Add samples that haven't been seen before to new_candidates 
-            # (uses hashset for O(1) membership check)
-            unseen_samples = []
-            for sample_dict in new_samples:
-                filtered_sample = Evidence({var: vals for var, vals in sample_dict.items() 
-                                                if var not in marginalized})
-                sample_hash = sample_evid_to_tuple(filtered_sample)
-                if sample_hash not in seen_hashes:
-                    seen_hashes.add(sample_hash)
-                    unseen_samples.append(filtered_sample)
-                    new_candidates.append(filtered_sample)
-            
-            # Compute likelihoods for new, unseen samples
-            if unseen_samples:
-                res = np.exp(
-                    likelihood_multiproc(working_path, unseen_samples, n_jobs=n_jobs)
-                )
-                new_probs.extend(res)
+                # Add samples that haven't been seen before to new_candidates 
+                # (uses hashset for O(1) membership check)
+                unseen_samples = []
+                for sample_dict in new_samples:
+                    filtered_sample = Evidence({var: vals for var, vals in sample_dict.items() 
+                                                    if var not in marginalized})
+                    sample_hash = sample_evid_to_tuple(filtered_sample)
+                    if sample_hash not in seen_hashes:
+                        seen_hashes.add(sample_hash)
+                        unseen_samples.append(filtered_sample)
+                        new_candidates.append(filtered_sample)
+                
+                # Compute likelihoods for new, unseen samples
+                if unseen_samples:
+                    res = np.exp(
+                        likelihood_multiproc(working_path, unseen_samples, n_jobs=n_jobs)
+                    )
+                    new_probs.extend(res)
 
-                # Check if you need to update the best candidate
-                if max(new_probs) > p_hat:
-                    p_hat = max(new_probs)
-                    q_hat_idx = np.argmax(new_probs)
-                    q_hat = new_candidates[q_hat_idx]
+                    # Check if you need to update the best candidate
+                    if max(new_probs) > p_hat:
+                        p_hat = max(new_probs)
+                        q_hat_idx = np.argmax(new_probs)
+                        q_hat = new_candidates[q_hat_idx]
             
             # Check if you can issue the PAC certificate, currently doing this in 
             # prob space rather than log lik space

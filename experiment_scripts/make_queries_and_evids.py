@@ -24,9 +24,9 @@ parser.add_argument('-d', '--datasets', nargs='+',
                     help='Dataset names separated by space (e.g., iris nltcs)')
 parser.add_argument('-n', '--num-queries', default=10,
                     help="Number of query and evidence pairs to create")
-parser.add_argument('-q', '--q-percent', type=float, default=0.3, 
+parser.add_argument('-q', '--q-percent', type=float, default=0.1, 
                     help="Proportion of query variables")
-parser.add_argument('-e', '--e-percent', type=float, default=0.3,
+parser.add_argument('-e', '--e-percent', type=float, default=0.9,
                     help="Proportion of evidence variables")
 parser.add_argument('--no-margs', action='store_true', 
                     help='Ensure every variable is either a query or evidence' \
@@ -52,38 +52,12 @@ mode = args.mode
 print(f"Datasets: {datasets}")
 
 for dataset in datasets:
-    # Training data files come in two different naming formats, so we have to
-    # try both
-    try:
-        with open(f"{data_path}/{dataset}/{dataset}-train.data") as f:
-            for line in f:
-                line = line.split()
-                if line[0] == 'var':
-                    continue
-                else:
-                    line = line[0].split(',')
-                    num_features = len(line)
-                    break
-    except:
-        try:
-            with open(f"{data_path}/{dataset}/{dataset}.train.data") as f:
-                for line in f:
-                    line = line.split()
-                    if line[0] == 'var':
-                        continue
-                    else:
-                        num_features = len(line)
-                        break
-        except Exception as error:
-            print(f"Failed to load training data: {error}")
-            print(f"Error type: {type(error).__name__}")
-            continue
-    print(f"Number of features: {num_features}")
 
     # Load the spn, to be used for making sure the random evidence is not 0 prob
     try:
         spn = from_file(Path(f"{data_path}/{dataset}/{dataset}.spn"))
         print(f"SPN loaded: {spn.vars()} vars and {spn.arcs()} arcs")
+        num_features = spn.vars()
     except FileNotFoundError as error:
         print(".spn file not found, check the file path or that the spn exists")
         print(error)
@@ -111,6 +85,10 @@ for dataset in datasets:
                 # will throw an error if a variable is missing from a query + 
                 # evid pair) then just set e_var_ids to all remaining. 
                 e_var_ids = remaining
+                assert len(q_var_ids) + len(e_var_ids) == num_features, (
+                    "The number of query vars and evidence vars has to add" \
+                    "up to the total number of features in no_margs mode"
+                )
             else:
                 e_var_ids = random.sample(
                     remaining, min(int(num_e_vars), len(remaining))
@@ -136,8 +114,12 @@ for dataset in datasets:
         q_line = ' '.join(map(str, q_var_ids))
         lines.append(q_line)
         lines.append(e_line)
-        q_lines.append(str(len(q_var_ids)) + ' ' + q_line)
-        e_lines.append(str(len(e_var_ids)) + ' ' + e_line)
+        if mode == ".query":
+            q_lines.append(q_line)
+            e_lines.append(e_line)
+        else:
+            q_lines.append(str(len(q_var_ids)) + ' ' + q_line)
+            e_lines.append(str(len(e_var_ids)) + ' ' + e_line)
 
     # Write to files
     if mode == '.map':
@@ -148,16 +130,16 @@ for dataset in datasets:
         print(f"Created {dataset}.map with {num_queries} query/evidence pairs") 
     elif mode == 'both':
         with open(
-            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.map", 'w'
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map", 'w'
         ) as f:
             f.write('\n'.join(lines))
         print(f"Created {dataset}.map with {num_queries} query/evidence pairs") 
         with open(
-            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.query", 'w'
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.query", 'w'
         ) as f:
             f.write('\n'.join(q_lines))
         with open(
-            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.evid", 'w'
+            f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.evid", 'w'
         ) as f:
             f.write('\n'.join(e_lines))
         print(f"Created {dataset}.query and .evid with {num_queries} query/evidence pairs") 
