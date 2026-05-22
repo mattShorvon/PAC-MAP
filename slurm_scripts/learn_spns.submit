@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+
+#SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/learn_spns%j.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=32
+#SBATCH --time=0-2:00
+
+python experiment_scripts/learn_spns.py -dp 20-datasets -d bbc
+# python experiment_scripts/learn_spns.py -dp 20-datasets -d c20ng
+# python experiment_scripts/learn_spns.py -dp 20-datasets -d cr52
+

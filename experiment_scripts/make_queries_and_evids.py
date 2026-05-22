@@ -114,14 +114,11 @@ for dataset in datasets:
         q_line = ' '.join(map(str, q_var_ids))
         lines.append(q_line)
         lines.append(e_line)
-        if mode == ".query":
-            q_lines.append(q_line)
-            e_lines.append(e_line)
-        else:
-            q_lines.append(str(len(q_var_ids)) + ' ' + q_line)
-            e_lines.append(str(len(e_var_ids)) + ' ' + e_line)
+        q_lines.append(str(len(q_var_ids)) + ' ' + q_line)
+        e_lines.append(str(len(e_var_ids)) + ' ' + e_line)
 
     # Write to files
+    print(f"Num features - {num_features}, Num q - {len(q_var_ids)}, Num e - {len(e_var_ids)}")
     if mode == '.map':
         with open(
             f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.map", 'w'

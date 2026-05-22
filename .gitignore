@@ -225,4 +225,4 @@ tags
 *.docx
 
 # bash files
-*.submit
+# *.submit

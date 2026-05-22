@@ -50,12 +50,12 @@
             "justMyCode": true
         },
         {
-            "name":"Python: benchmark.py with cwebkb",
+            "name":"Python: benchmark.py with nltcs",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiment_scripts/benchmark.py",
             "console": "integratedTerminal",
-            "args": ["-d", "cwebkb", "-m", "PACMAP", "--data-path", "20-datasets", "-q", "0.25", "-e", "0.75"],
+            "args": ["-d", "nltcs", "-m", "PACMAP", "--data-path", "20-datasets", "-q", "0.1", "-e", "0.9"],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         },

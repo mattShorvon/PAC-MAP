@@ -1,0 +1,57 @@
+#!/usr/bin/bash
+#SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/amp+pac_map_hamming%j.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=100
+#SBATCH --time=0-48:00
+
+module load anaconda3/2022.10-gcc-13.2.0
+source /users/${USER}/.bashrc
+source activate pyspn
+
+# Navigate to project root (IMPORTANT when .submit is in subdirectory)
+cd /users/${USER}/pyspn-map-benchmark
+# Alternative: cd $SLURM_SUBMIT_DIR (if you submit from project root)
+
+# Verify we're in the right place
+echo "=== Working Directory ==="
+pwd
+ls -la experiment_scripts/amp+pac_map_hamming.py  # Check file exists
+echo "========================="
+
+# Verify environment activation
+echo "=== Environment Check ==="
+echo "Current conda environment: $CONDA_DEFAULT_ENV"
+python --version
+echo "========================="
+
+# Test
+# DATETIME=$(date +"%d-%m-%Y %H:%M:%S")
+# python experiment_scripts/benchmark.py -m MP AMP PACMAP PACMAP-H --no-learn --data-path small_datasets -d car -q 0.1 -e 0.9 -dt "$DATETIME" 
+
+DATETIME=$(date +"%d-%m-%Y %H:%M:%S")
+
+echo "=== amp+pac_map_hamming starting at $(date '%d-%m-%Y %H:%M:%S') ==="
+time {
+    EXPERIMENT_ID=07_01_26_1
+    python experiment_scripts/make_queries_and_evids.py -dp 20-datasets -all -q 0.25 -e 0.75
+    python experiment_scripts/amp+pac_map_hamming.py \
+        --data-path 20-datasets \
+        -all \
+        -q 0.25 \
+        -e 0.75 \
+        -dt "$DATETIME" \
+        -id $EXPERIMENT_ID
+}
+
+# echo "=== amp+pac_map_budget starting at $(date '+%H:%M:%S') ==="
+# time {
+#     EXPERIMENT_ID=03_01_26_1
+#     python experiment_scripts/amp+pac_map_budget.py \
+#         --data-path 20-datasets \
+#         --budgets 8000 16000 32000 \
+#         -d jester \
+#         -q 0.25 \
+#         -e 0.75 \
+#         -dt "$DATETIME" \
+#         -id $EXPERIMENT_ID
+# }

@@ -1,0 +1,64 @@
+#!/usr/bin/bash
+#SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/baudio%j.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=40
+#SBATCH --time=0-48:00
+
+# Activate the conda environment
+module load anaconda3/2022.10-gcc-13.2.0
+source /users/${USER}/.bashrc
+source activate pyspn
+
+# Navigate to project root 
+# (I did this because I put all my .submit scripts in a subfolder called /slurm_scripts,
+# just so they wouldn't clutter the project root)
+cd /users/${USER}/pyspn-map-benchmark
+
+# Verify environment activation
+echo "=== Environment Check ==="
+echo "Current conda environment: $CONDA_DEFAULT_ENV"
+python --version
+echo "========================="
+
+# Pass command-line arguments to the python scripts and run them
+DATETIME=$(date +"%d-%m-%Y %H:%M:%S")
+echo "=== baudio starting at $(date '+%H:%M:%S') ==="
+time {
+    # python experiment_scripts/make_queries_and_evids.py -dp 20-datasets -all -q 0.4 -e 0.6
+    EXPERIMENT_ID=15_05_26
+    python experiment_scripts/benchmark.py \
+        -m HBP \
+        --data-path 20-datasets \
+        -d baudio \
+        -q 0.1 \
+        -e 0.9 \
+        -dt "$DATETIME" \
+        -id $EXPERIMENT_ID \
+        --batch-size 250
+    EXPERIMENT_ID=15_05_26
+    python experiment_scripts/benchmark.py \
+        -m HBP \
+        --data-path 20-datasets \
+        -d baudio \
+        -q 0.25 \
+        -e 0.75 \
+        -dt "$DATETIME" \
+        -id $EXPERIMENT_ID \
+        --batch-size 250
+    EXPERIMENT_ID=15_05_26
+    python experiment_scripts/benchmark.py \
+        -m HBP \
+        --data-path 20-datasets \
+        -d baudio \
+        -q 0.5 \
+        -e 0.5 \
+        -dt "$DATETIME" \
+        -id $EXPERIMENT_ID \
+        --batch-size 250
+    # python experiment_scripts/plot_results.py \
+    #     -q 0.4 \
+    #     -e 0.6 \
+    #     -dn 20-datasets \
+    #     -dt "$DATETIME"
+}
+echo ""

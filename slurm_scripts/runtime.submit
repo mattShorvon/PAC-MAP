@@ -1,0 +1,17 @@
+#!/usr/bin/bash
+
+#SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/pacmap_runtime%j.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=40
+#SBATCH --time=0-7:00
+
+module load anaconda3/2022.10-gcc-13.2.0
+source /users/${USER}/.bashrc
+source activate pyspn
+
+# Pacmap runtime profiling:
+# kernprof -l -v experiment_scripts/pac_map_time_profile.py
+# rm pac_map_time_profile.py.lprof
+
+# Sampling runtime:
+python experiment_scripts/pac_map_timed.py
