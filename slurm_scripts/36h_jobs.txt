@@ -1,0 +1,6 @@
+book|0.10|0.90|PACMAP|
+book|0.25|0.75|PACMAP|
+book|0.5|0.5|PACMAP|
+book|0.10|0.90|PACMAP-H|
+book|0.25|0.75|PACMAP-H|
+book|0.5|0.5|PACMAP-H|

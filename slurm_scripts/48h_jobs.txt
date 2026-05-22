@@ -1,0 +1,6 @@
+ocr_letters|0.10|0.90|PACMAP|--sample-cap 125000 --batch-size 1250
+ocr_letters|0.25|0.75|PACMAP|--sample-cap 125000 --batch-size 1250
+ocr_letters|0.5|0.5|PACMAP|--sample-cap 125000 --batch-size 1250
+ocr_letters|0.10|0.90|PACMAP-H|--sample-cap 125000 --batch-size 125
+ocr_letters|0.25|0.75|PACMAP-H|--sample-cap 125000 --batch-size 125
+ocr_letters|0.5|0.5|PACMAP-H|--sample-cap 125000 --batch-size 125

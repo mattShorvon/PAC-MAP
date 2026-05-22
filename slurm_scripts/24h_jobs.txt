@@ -1,0 +1,6 @@
+tmovie|0.10|0.90|PACMAP|
+tmovie|0.25|0.75|PACMAP|
+tmovie|0.5|0.5|PACMAP|
+tmovie|0.10|0.90|PACMAP-H|
+tmovie|0.25|0.75|PACMAP-H|
+tmovie|0.5|0.5|PACMAP-H|

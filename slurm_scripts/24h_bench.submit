@@ -1,14 +1,14 @@
 #!/usr/bin/bash
-#SBATCH --job-name=bench-12h
-#SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/bench12h_%A_%a.out
+#SBATCH --job-name=bench-24h
+#SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/bench24h_%A_%a.out
 #SBATCH --nodes=1
 #SBATCH --ntasks=40
-#SBATCH --time=0-12:00
+#SBATCH --time=0-24:00
 
 # IMPORTANT:
-# Set this to 0-(N-1) where N == number of *non-empty* lines in jobs_12h.txt.
-# Example: if jobs_12h.txt has 18 lines, use: 0-17
-#SBATCH --array=0-11
+# Set this to 0-(N-1) where N == number of *non-empty* lines in jobs_24h.txt.
+# Example: if jobs_24h.txt has 18 lines, use: 0-17
+#SBATCH --array=0-5
 
 set -euo pipefail
 
@@ -32,7 +32,7 @@ echo "========================="
 DATETIME=$(date +"%d-%m-%Y %H:%M:%S")
 EXPERIMENT_ID=22_05_26
 
-JOBFILE="slurm_scripts/jobs_12h.txt"
+JOBFILE="slurm_scripts/jobs_24h.txt"
 LINE_NUM=$((SLURM_ARRAY_TASK_ID + 1))
 
 JOBLINE="$(sed -n "${LINE_NUM}p" "${JOBFILE}")"
