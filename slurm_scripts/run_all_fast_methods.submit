@@ -29,25 +29,35 @@ echo "========================="
 # python experiment_scripts/benchmark.py -m MP AMP PACMAP PACMAP-H --no-learn --data-path small_datasets -d car -q 0.1 -e 0.9 -dt "$DATETIME" 
 
 DATETIME=$(date +"%d-%m-%Y %H:%M:%S")
-EXPERIMENT_ID=15_05_26
+EXPERIMENT_ID=22_05_26
 # python experiment_scripts/make_queries_and_evids.py -dp 20-datasets -all -q 0.1 -e 0.1
 # python experiment_scripts/benchmark.py -m MP AMP MS PACMAP --no-learn --data-path 20-datasets -all -q 0.1 -e 0.1 -dt "$DATETIME"
 # python experiment_scripts/plot_results.py -q 0.1 -e 0.1 -dn 20-datasets -dt "$DATETIME"
-echo "=== -q 0.25 -e 0.75 starting at $(date '+%H:%M:%S') ==="
+echo "=== -q 0.1 -e 0.9 starting at $(date '+%H:%M:%S') ==="
 time {
-    # python experiment_scripts/make_queries_and_evids.py -dp 20-datasets -all -q 0.25 -e 0.75
     python experiment_scripts/benchmark.py \
-        -m IND MP AMP \
+        -m IND MP AMP HBP \
+        --data-path 20-datasets \
+        -all \
+        -q 0.1 \
+        -e 0.9 \
+        -dt "$DATETIME" \
+        -id $EXPERIMENT_ID
+    python experiment_scripts/benchmark.py \
+        -m IND MP AMP HBP \
         --data-path 20-datasets \
         -all \
         -q 0.25 \
         -e 0.75 \
         -dt "$DATETIME" \
         -id $EXPERIMENT_ID
-    # python experiment_scripts/plot_results.py \
-    #     -q 0.25 \
-    #     -e 0.75 \
-    #     -dn 20-datasets \
-    #     -dt "$DATETIME"
+    python experiment_scripts/benchmark.py \
+        -m IND MP AMP HBP \
+        --data-path 20-datasets \
+        -all \
+        -q 0.5 \
+        -e 0.5 \
+        -dt "$DATETIME" \
+        -id $EXPERIMENT_ID
 }
 echo ""

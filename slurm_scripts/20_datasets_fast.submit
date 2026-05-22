@@ -34,10 +34,9 @@ DATETIME=$(date +"%d-%m-%Y %H:%M:%S")
 # python experiment_scripts/plot_results.py -q 0.1 -e 0.1 -dn 20-datasets -dt "$DATETIME"
 echo "=== 20_datasets_fast starting at $(date '+%H:%M:%S') ==="
 time {
-    # python experiment_scripts/make_queries_and_evids.py -dp 20-datasets -all -q 0.4 -e 0.6
-    EXPERIMENT_ID=15_05_26
+    EXPERIMENT_ID=22_05_26
     python experiment_scripts/benchmark.py \
-        -m IND MP AMP HBP PACMAP PACMAP-H \
+        -m PACMAP PACMAP-H \
         --data-path 20-datasets \
         -d adult connect4 kdd msnbc mushrooms nltcs plants pumsb_star tretail \
         -q 0.1 \
@@ -45,9 +44,9 @@ time {
         -dt "$DATETIME" \
         -id $EXPERIMENT_ID \
         --batch-size 250
-    EXPERIMENT_ID=15_05_26
+    EXPERIMENT_ID=22_05_26
     python experiment_scripts/benchmark.py \
-        -m IND MP AMP HBP PACMAP PACMAP-H \
+        -m PACMAP PACMAP-H \
         --data-path 20-datasets \
         -d adult connect4 kdd msnbc mushrooms nltcs plants pumsb_star tretail \
         -q 0.25 \
@@ -55,9 +54,9 @@ time {
         -dt "$DATETIME" \
         -id $EXPERIMENT_ID \
         --batch-size 250
-    EXPERIMENT_ID=15_05_26
+    EXPERIMENT_ID=22_05_26
     python experiment_scripts/benchmark.py \
-        -m IND MP AMP HBP PACMAP PACMAP-H \
+        -m PACMAP PACMAP-H \
         --data-path 20-datasets \
         -d adult connect4 kdd msnbc mushrooms nltcs plants pumsb_star tretail \
         -q 0.5 \
@@ -65,10 +64,5 @@ time {
         -dt "$DATETIME" \
         -id $EXPERIMENT_ID \
         --batch-size 250
-    # python experiment_scripts/plot_results.py \
-    #     -q 0.4 \
-    #     -e 0.6 \
-    #     -dn 20-datasets \
-    #     -dt "$DATETIME"
 }
 echo ""

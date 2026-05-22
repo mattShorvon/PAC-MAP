@@ -2,7 +2,7 @@
 #SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/bnetflix%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks=40
-#SBATCH --time=0-48:00
+#SBATCH --time=0-36:00
 
 module load anaconda3/2022.10-gcc-13.2.0
 source /users/${USER}/.bashrc
@@ -37,7 +37,7 @@ time {
     # python experiment_scripts/make_queries_and_evids.py -dp 20-datasets -all -q 0.4 -e 0.6
     EXPERIMENT_ID=15_05_26
     python experiment_scripts/benchmark.py \
-        -m HBP \
+        -m PACMAP PACMAP-H \
         --data-path 20-datasets \
         -d bnetflix \
         -q 0.1 \
@@ -46,7 +46,7 @@ time {
         -id $EXPERIMENT_ID
     EXPERIMENT_ID=15_05_26
     python experiment_scripts/benchmark.py \
-        -m HBP \
+        -m PACMAP PACMAP-H \
         --data-path 20-datasets \
         -d bnetflix \
         -q 0.25 \
@@ -55,7 +55,7 @@ time {
         -id $EXPERIMENT_ID
     EXPERIMENT_ID=15_05_26
     python experiment_scripts/benchmark.py \
-        -m HBP \
+        -m PACMAP PACMAP-H \
         --data-path 20-datasets \
         -d bnetflix \
         -q 0.5 \

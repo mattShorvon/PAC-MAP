@@ -61,7 +61,7 @@ parser.add_argument('--no-margs', action='store_true',
                     help='Whether the no_margs (no marginals) query files are being used or not')
 parser.add_argument('--sample-cap', type=int, default=250000,
                     help='sample_cap parameter for pacmap and pacmap-h')
-parser.add_argument('--batch-size', type=int, default=1250,
+parser.add_argument('--batch-size', type=int, default=250,
                     help='batch_size parameter for pacmap and pacmap-h')
 
 args = parser.parse_args()

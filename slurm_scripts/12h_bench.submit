@@ -1,0 +1,68 @@
+```bash
+# filepath: /Users/matthewshorvon/Documents/pyspn-may312020/slurm_scripts/bench_12h.submit
+#!/usr/bin/bash
+#SBATCH --job-name=bench-12h
+#SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/bench12h_%A_%a.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=40
+#SBATCH --time=0-12:00
+
+# IMPORTANT:
+# Set this to 0-(N-1) where N == number of *non-empty* lines in jobs_12h.txt.
+# Example: if jobs_12h.txt has 18 lines, use: 0-17
+#SBATCH --array=0-17
+
+set -euo pipefail
+
+module load anaconda3/2022.10-gcc-13.2.0
+source /users/${USER}/.bashrc
+source activate pyspn
+
+# Navigate to project root (IMPORTANT when .submit is in subdirectory)
+cd /users/${USER}/pyspn-map-benchmark
+
+echo "=== Working Directory ==="
+pwd
+ls -la experiment_scripts/benchmark.py
+echo "========================="
+
+echo "=== Environment Check ==="
+echo "Current conda environment: $CONDA_DEFAULT_ENV"
+python --version
+echo "========================="
+
+DATETIME=$(date +"%d-%m-%Y %H:%M:%S")
+EXPERIMENT_ID=22_05_26
+
+JOBFILE="slurm_scripts/jobs_12h.txt"
+LINE_NUM=$((SLURM_ARRAY_TASK_ID + 1))
+
+JOBLINE="$(sed -n "${LINE_NUM}p" "${JOBFILE}")"
+if [[ -z "${JOBLINE}" ]]; then
+  echo "No job found for task ${SLURM_ARRAY_TASK_ID} (line ${LINE_NUM}) in ${JOBFILE}"
+  exit 2
+fi
+
+# Format per line:
+# dataset|q|e|methods|extra_args
+IFS='|' read -r DATASET QPROP EPROP METHODS EXTRA <<< "${JOBLINE}"
+
+echo "=== Task ${SLURM_ARRAY_TASK_ID} starting at $(date '+%H:%M:%S') ==="
+echo "dataset=${DATASET} q=${QPROP} e=${EPROP}"
+echo "methods='${METHODS}'"
+echo "extra='${EXTRA}'"
+echo "dt='${DATETIME}' id='${EXPERIMENT_ID}'"
+echo "==============================================="
+
+# shellcheck disable=SC2086
+python experiment_scripts/benchmark.py \
+  -m ${METHODS} \
+  --data-path 20-datasets \
+  -d "${DATASET}" \
+  -q "${QPROP}" \
+  -e "${EPROP}" \
+  -dt "${DATETIME}" \
+  -id "${EXPERIMENT_ID}" \
+  ${EXTRA}
+
+echo ""
