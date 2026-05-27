@@ -1,12 +1,15 @@
+
+
+1st run: 
 accidents|0.10|0.90|PACMAP PACMAP-H|
 accidents|0.25|0.75|PACMAP PACMAP-H|
-accidents|0.5|0.5|PACMAP PACMAP-H|
+accidents|0.5|0.5|PACMAP PACMAP-H| timeout
 bnetflix|0.10|0.90|PACMAP PACMAP-H|
-bnetflix|0.25|0.75|PACMAP PACMAP-H|
-bnetflix|0.5|0.5|PACMAP PACMAP-H|
+bnetflix|0.25|0.75|PACMAP PACMAP-H| timeout
+bnetflix|0.5|0.5|PACMAP PACMAP-H| timeout
 msweb|0.10|0.90|PACMAP PACMAP-H|
-msweb|0.25|0.75|PACMAP PACMAP-H|
-msweb|0.5|0.5|PACMAP PACMAP-H|
+msweb|0.25|0.75|PACMAP PACMAP-H| timeout
+msweb|0.5|0.5|PACMAP PACMAP-H| timout
 baudio|0.10|0.90|PACMAP|
 baudio|0.25|0.75|PACMAP|
-baudio|0.5|0.5|PACMAP|
+baudio|0.5|0.5|PACMAP| timeout

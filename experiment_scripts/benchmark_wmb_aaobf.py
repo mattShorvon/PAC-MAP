@@ -84,19 +84,19 @@ for dataset in datasets:
         print(error)
         continue
 
-    # Convert the spn to a pgm
-    make_uai_file(spn, f"{data_path}/{dataset}/{dataset}.uai")
-    print("Converted spn to pgm")
+    # # Convert the spn to a pgm
+    # make_uai_file(spn, f"{data_path}/{dataset}/{dataset}.uai")
+    # print("Converted spn to pgm")
 
     # Set up the evidences and queries
     queries, evidences = [], []
     with open(
-        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.query"
+        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.query"
     ) as f:
         for line in f:
             queries.append(line.strip('\n'))
     with open(
-        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e_nomargs.evid"
+        f"{data_path}/{dataset}/{dataset}_{q_percent}q_{e_percent}e.evid"
     ) as f:
         for line in f:
             evidences.append(line.strip('\n'))

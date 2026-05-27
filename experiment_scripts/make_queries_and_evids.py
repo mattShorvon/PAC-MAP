@@ -31,7 +31,7 @@ parser.add_argument('-e', '--e-percent', type=float, default=0.9,
 parser.add_argument('--no-margs', action='store_true', 
                     help='Ensure every variable is either a query or evidence' \
                     'variable (no marginals)')
-parser.add_argument('-m', '--mode', default='.map',
+parser.add_argument('-m', '--mode', default='both',
                     help='write to single .map file or to .query and .evid?')
 
 args = parser.parse_args()

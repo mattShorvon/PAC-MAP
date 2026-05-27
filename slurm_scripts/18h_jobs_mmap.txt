@@ -1,0 +1,20 @@
+dna|0.2|0.5|PACMAP|--results-file benchmark_results_mmap.csv
+dna|0.5|0.3|PACMAP|--results-file benchmark_results_mmap.csv
+dna|0.2|0.5|PACMAP-H|--results-file benchmark_results_mmap.csv
+dna|0.5|0.3|PACMAP-H|--results-file benchmark_results_mmap.csv
+
+1st run:
+baudio|0.2|0.5|PACMAP|--results-file benchmark_results_mmap.csv
+baudio|0.5|0.3|PACMAP|--results-file benchmark_results_mmap.csv timeout
+jester|0.2|0.5|PACMAP|--results-file benchmark_results_mmap.csv
+jester|0.5|0.3|PACMAP|--results-file benchmark_results_mmap.csv
+jester|0.2|0.5|PACMAP-H|--results-file benchmark_results_mmap.csv
+jester|0.5|0.3|PACMAP-H|--results-file benchmark_results_mmap.csv
+kosarek|0.2|0.5|PACMAP|--results-file benchmark_results_mmap.csv
+kosarek|0.5|0.3|PACMAP|--results-file benchmark_results_mmap.csv
+kosarek|0.2|0.5|PACMAP-H|--results-file benchmark_results_mmap.csv
+kosarek|0.5|0.3|PACMAP-H|--results-file benchmark_results_mmap.csv
+nips|0.2|0.5|PACMAP|--results-file benchmark_results_mmap.csv
+nips|0.5|0.3|PACMAP|--results-file benchmark_results_mmap.csv
+nips|0.2|0.5|PACMAP-H|--results-file benchmark_results_mmap.csv
+nips|0.5|0.3|PACMAP-H|--results-file benchmark_results_mmap.csv

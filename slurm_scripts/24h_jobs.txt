@@ -1,6 +1,14 @@
-tmovie|0.10|0.90|PACMAP|
-tmovie|0.25|0.75|PACMAP|
-tmovie|0.5|0.5|PACMAP|
-tmovie|0.10|0.90|PACMAP-H|
+accidents|0.5|0.5|PACMAP PACMAP-H| 
+bnetflix|0.25|0.75|PACMAP PACMAP-H| 
+bnetflix|0.5|0.5|PACMAP PACMAP-H| 
+msweb|0.25|0.75|PACMAP PACMAP-H| 
+msweb|0.5|0.5|PACMAP PACMAP-H|
+baudio|0.5|0.5|PACMAP|
+
+1st run: 
+tmovie|0.10|0.90|PACMAP| timeout
+tmovie|0.25|0.75|PACMAP| timeout
+tmovie|0.5|0.5|PACMAP| timeout
+tmovie|0.10|0.90|PACMAP-H| timeout
 tmovie|0.25|0.75|PACMAP-H|
-tmovie|0.5|0.5|PACMAP-H|
+tmovie|0.5|0.5|PACMAP-H| timeout

@@ -1,12 +1,17 @@
+dna|0.10|0.90|PACMAP PACMAP-H|
+dna|0.25|0.75|PACMAP PACMAP-H|
+dna|0.5|0.5|PACMAP PACMAP-H|
+
+1st run:
 jester|0.10|0.90|PACMAP PACMAP-H|
 jester|0.25|0.75|PACMAP PACMAP-H|
 jester|0.5|0.5|PACMAP PACMAP-H|
 kosarek|0.10|0.90|PACMAP PACMAP-H|
-kosarek|0.25|0.75|PACMAP PACMAP-H|
-kosarek|0.5|0.5|PACMAP PACMAP-H|
+kosarek|0.25|0.75|PACMAP PACMAP-H| timeout 
+kosarek|0.5|0.5|PACMAP PACMAP-H| timeout
 nips|0.10|0.90|PACMAP PACMAP-H|
 nips|0.25|0.75|PACMAP PACMAP-H|
 nips|0.5|0.5|PACMAP PACMAP-H|
 baudio|0.10|0.90|PACMAP-H|
 baudio|0.25|0.75|PACMAP-H|
-baudio|0.5|0.5|PACMAP-H|
+baudio|0.5|0.5|PACMAP-H| timeout

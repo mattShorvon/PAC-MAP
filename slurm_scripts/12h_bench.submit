@@ -32,7 +32,7 @@ echo "========================="
 DATETIME=$(date +"%d-%m-%Y %H:%M:%S")
 EXPERIMENT_ID=22_05_26
 
-JOBFILE="slurm_scripts/jobs_12h.txt"
+JOBFILE="slurm_scripts/12h_jobs_mmap.txt"
 LINE_NUM=$((SLURM_ARRAY_TASK_ID + 1))
 
 JOBLINE="$(sed -n "${LINE_NUM}p" "${JOBFILE}")"
@@ -53,14 +53,15 @@ echo "dt='${DATETIME}' id='${EXPERIMENT_ID}'"
 echo "==============================================="
 
 # shellcheck disable=SC2086
-python experiment_scripts/benchmark.py \
-  -m ${METHODS} \
-  --data-path 20-datasets \
-  -d "${DATASET}" \
-  -q "${QPROP}" \
-  -e "${EPROP}" \
-  -dt "${DATETIME}" \
-  -id "${EXPERIMENT_ID}" \
-  ${EXTRA}
-
+time {
+  python experiment_scripts/benchmark.py \
+    -m ${METHODS} \
+    --data-path 20-datasets \
+    -d "${DATASET}" \
+    -q "${QPROP}" \
+    -e "${EPROP}" \
+    -dt "${DATETIME}" \
+    -id "${EXPERIMENT_ID}" \
+    ${EXTRA}
+}
 echo ""

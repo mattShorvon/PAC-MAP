@@ -2,7 +2,7 @@
 #SBATCH --output=/users/%u/pyspn-map-benchmark/hpc_outs/20_datasets_fast%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks=40
-#SBATCH --time=0-36:00
+#SBATCH --time=0-48:00
 
 module load anaconda3/2022.10-gcc-13.2.0
 source /users/${USER}/.bashrc
@@ -39,30 +39,32 @@ time {
         -m PACMAP PACMAP-H \
         --data-path 20-datasets \
         -d adult connect4 kdd msnbc mushrooms nltcs plants pumsb_star tretail \
-        -q 0.1 \
-        -e 0.9 \
+        -q 0.2 \
+        -e 0.5 \
         -dt "$DATETIME" \
         -id $EXPERIMENT_ID \
-        --batch-size 250
-    EXPERIMENT_ID=22_05_26
-    python experiment_scripts/benchmark.py \
-        -m PACMAP PACMAP-H \
-        --data-path 20-datasets \
-        -d adult connect4 kdd msnbc mushrooms nltcs plants pumsb_star tretail \
-        -q 0.25 \
-        -e 0.75 \
-        -dt "$DATETIME" \
-        -id $EXPERIMENT_ID \
-        --batch-size 250
+        --batch-size 250 \
+        --results-file benchmark_results_mmap.csv
     EXPERIMENT_ID=22_05_26
     python experiment_scripts/benchmark.py \
         -m PACMAP PACMAP-H \
         --data-path 20-datasets \
         -d adult connect4 kdd msnbc mushrooms nltcs plants pumsb_star tretail \
         -q 0.5 \
-        -e 0.5 \
+        -e 0.3 \
         -dt "$DATETIME" \
         -id $EXPERIMENT_ID \
-        --batch-size 250
+        --batch-size 250 \
+        --results-file benchmark_results_mmap.csv
+    # EXPERIMENT_ID=22_05_26
+    # python experiment_scripts/benchmark.py \
+    #     -m PACMAP PACMAP-H \
+    #     --data-path 20-datasets \
+    #     -d adult connect4 kdd msnbc mushrooms nltcs plants pumsb_star tretail \
+    #     -q 0.5 \
+    #     -e 0.5 \
+    #     -dt "$DATETIME" \
+    #     -id $EXPERIMENT_ID \
+    #     --batch-size 250
 }
 echo ""

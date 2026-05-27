@@ -170,7 +170,11 @@ for dataset in datasets:
                 "Method": "Independent",
                 "MAP Estimate": str({var.id: baseline_est[var] for var in q}),
                 "MAP Probability": baseline_prob,
-                "Runtime": baseline_time
+                "Runtime": baseline_time,
+                "Query Proportion": q_percent,
+                "Evid Proportion": e_percent,
+                "Experiment ID": experiment_id,
+                "Query_ID": i
             })
             print(f"Baseline:           {baseline_prob:.4g}")
             print("Baseline Est:", ' '.join([str(baseline_est[v]) for v in q]))
@@ -193,7 +197,11 @@ for dataset in datasets:
                 "Method": "Max Product",
                 "MAP Estimate": str({var.id: mp_est[var] for var in q}),
                 "MAP Probability": mp_prob,
-                "Runtime": mp_time
+                "Runtime": mp_time,
+                "Query Proportion": q_percent,
+                "Evid Proportion": e_percent,
+                "Experiment ID": experiment_id,
+                "Query_ID": i
             })
             print(f"MP:           {mp_prob:.4g}")
             print("MAP Est:", ' '.join([str(mp_est[v]) for v in q]))
@@ -244,7 +252,11 @@ for dataset in datasets:
                     "Method": "Max Search",
                     "MAP Estimate": str({var.id: ms_est[var] for var in q}),
                     "MAP Probability": ms_prob,
-                    "Runtime": ms_time
+                    "Runtime": ms_time,
+                    "Query Proportion": q_percent,
+                    "Evid Proportion": e_percent,
+                    "Experiment ID": experiment_id,
+                    "Query_ID": i
                 })
                 print(f"MS:           {ms_prob:.4g}")
                 print("MAP Est:", ' '.join([str(ms_est[v]) for v in q]))
@@ -300,7 +312,11 @@ for dataset in datasets:
                 "Method": "PAC_MAP",
                 "MAP Estimate": str({var.id: pac_map_est[var] for var in q}),
                 "MAP Probability": pac_map_prob,
-                "Runtime": pac_map_time
+                "Runtime": pac_map_time,
+                "Query Proportion": q_percent,
+                "Evid Proportion": e_percent,
+                "Experiment ID": experiment_id,
+                "Query_ID": i
             })
             print(f"PAC MAP:           {pac_map_prob:.4g}")
             print("MAP Est:", ' '.join([str(pac_map_est[v]) for v in q]))
