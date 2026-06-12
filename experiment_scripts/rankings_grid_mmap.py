@@ -10,11 +10,10 @@ def get_method_colors():
     """Define colors for each method using ggsci NPG palette."""
     # NPG (Nature Publishing Group) palette from ggsci
     return {
-        'ArgMax Product': 'npgPurple',                       # #8491B4
+        'ArgMax Product': 'npgPurple',            # #8491B4
         'Hybrid Belief-Propagation': 'npgBrown',  # #7E6148
-        'Independent': 'npgRed',                          # #E64B35
-        'ITSELF': 'npgOrange',                    # #F39B7F
-        'Max Product': 'npgCyan',                          # #4DBBD5
+        'Independent': 'npgRed',                  # #E64B35
+        'Max Product': 'npgCyan',                 # #4DBBD5
         'PAC_MAP': 'npgNavy',                     # #3C5488
         'PAC_MAP_Hamming': 'npgGreen',            # #00A087
     }
@@ -109,7 +108,7 @@ def create_colored_latex_table(
     latex_str += r"\toprule" + "\n"
 
     # Header
-    latex_str += "Dataset & Dimension & 10\\% Query & 25\\% Query & 50\\% Query \\\\\n"
+    latex_str += "Dataset & Dimension & 20\\% Query & 50\\% Query \\\\\n"
     latex_str += r"\midrule" + "\n"
     
     # Data rows
@@ -193,7 +192,7 @@ parser.add_argument('-ids', '--experiment-ids', nargs='+',
 
 # Parse input arguments and load results
 args = parser.parse_args()
-all_results = pd.read_csv('benchmark_results.csv')
+all_results = pd.read_csv('benchmark_results_mmap.csv')
 assert args.experiment_ids, (
     "You need to provide a list of experiment ids"
 )
@@ -263,12 +262,11 @@ rank1_counts = ranks_aggregated[ranks_aggregated['Rank'] == 1.0].groupby(
 # Create rankings grid manually
 # method_order = sorted(all_results['Method'].unique())
 method_order = [
-        'ArgMax Product',                       # #8491B4
+        'ArgMax Product',             # #8491B4
         'Hybrid Belief-Propagation',  # #7E6148
-        'Independent',                          # #E64B35
-        'ITSELF',                    # #F39B7F
-        'Max Product',                          # #4DBBD5
-        'PAC_MAP',                     # #3C5488
+        'Independent',                # #E64B35
+        'Max Product',                # #4DBBD5
+        'PAC_MAP',                    # #3C5488
         'PAC_MAP_Hamming'
 ]
 rankings_per_cell = []
@@ -319,12 +317,11 @@ for dataset in ranks_aggregated['Dataset'].unique():
 
 rankings_df = pd.DataFrame(rankings_per_cell)
 rankings_df = rankings_df.rename(columns={
-    q_proportions[0]: '10% Query',
-    q_proportions[1]: '25% Query',
-    q_proportions[2]: '50% Query'
+    q_proportions[0]: '20% Query',
+    q_proportions[1]: '50% Query'
 })
 rankings_df['Dimension'] = [100] * len(rankings_df)
-rankings_df = rankings_df[['Dataset', 'Dimension', '10% Query', '25% Query', '50% Query']]
+rankings_df = rankings_df[['Dataset', 'Dimension', '20% Query', '50% Query']]
 print(rankings_df)
 print(f"\nMethod order: {method_order}")
 
