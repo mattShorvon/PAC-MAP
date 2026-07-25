@@ -3,7 +3,7 @@ library(ggplot2)
 library(ggsci)
 
 # Load data
-df <- fread("amp+pacmap_h_results.csv")
+df <- fread("result_csvs/amp+pacmap_h_results.csv")
 df <- df[Date == "07-01-2026 16:07:09", ]
 df[, Date := NULL]
 df[, Query := NULL]
@@ -11,7 +11,7 @@ colnames(df)[2] <- "Amp_Prob"
 colnames(df)[3] <- "Pac_Map_Prob"
 
 # Prep data
-df[, lambda := log(Pac_Map_Prob / Amp_Prob)]
+df[, lambda := log2(Pac_Map_Prob / Amp_Prob)]
 df[, mu := mean(lambda), by = .(Dataset)]
 df[, se := sd(lambda) / sqrt(10), by = .(Dataset)]
 
@@ -34,7 +34,7 @@ g <- ggplot(tmp, aes(Dataset, mu)) +
         width = 0.4, linewidth = 0.75
     ) +
     scale_fill_npg() +
-    labs(y = "Log likelihood ratio") +
+    labs(y = "Bits of improvement") +
     theme_bw() +
     theme(
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 14),
@@ -47,7 +47,7 @@ plot(g)
 ggsave(
     "results/amp_pacmaph_comparison.pdf",
     g,
-    width = 8, height = 10, dpi = 300
+    width = 10, height = 6, dpi = 300
 )
 
 # Trying out plotting percentage increase instead of log likelihood ratio
@@ -132,7 +132,7 @@ g <- ggplot(tmp, aes(Dataset, mu)) +
         width = 0.4, linewidth = 0.75
     ) +
     scale_fill_npg() +
-    labs(y = "Log likelihood ratio") +
+    labs(y = "Bits of improvement") +
     theme_bw() +
     theme(
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 14),
