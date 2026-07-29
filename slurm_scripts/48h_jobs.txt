@@ -1,3 +1,51 @@
+book|0.2|0.8|IND MP AMP HBP|
+nips|0.2|0.8|IND MP AMP HBP|
+tmovie|0.2|0.8|IND MP AMP HBP|
+book|0.2|0.8|PACMAP|
+nips|0.2|0.8|PACMAP|
+tmovie|0.2|0.8|PACMAP|
+book|0.2|0.8|PACMAP-H|
+nips|0.2|0.8|PACMAP-H|
+tmovie|0.2|0.8|PACMAP-H|
+
+
+
+accidents|0.5|0.5|PACMAP|
+accidents|0.5|0.5|PACMAP-H|
+baudio|0.5|0.5|PACMAP|
+bnetflix|0.5|0.5|PACMAP|
+bnetflix|0.5|0.5|PACMAP-H|
+
+
+ocr_letters|0.5|0.5|PACMAP-H|--sample-cap 100000 --batch-size 100
+ocr_letters|0.5|0.5|IND MP AMP HBP|
+
+
+14/07:
+accidents|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+adult|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+bnetflix|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+connect4|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+dna|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+jester|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+kdd|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+msnbc|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+nips|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+nltcs|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+mushrooms|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+plants|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+pumsb_star|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+tretail|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+ocr_letters|0.2|0.8|IND MP AMP HBP|
+ocr_letters|0.2|0.8|PACMAP|--sample-cap 125000 --batch-size 1250
+ocr_letters|0.2|0.8|PACMAP-H|--sample-cap 125000 --batch-size 1250
+baudio|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+book|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+kosarek|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+msweb|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+tmovie|0.2|0.8|IND MP AMP HBP PACMAP PACMAP-H|
+
+1st run:
 ocr_letters|0.10|0.90|PACMAP|--sample-cap 125000 --batch-size 1250
 ocr_letters|0.25|0.75|PACMAP|--sample-cap 125000 --batch-size 1250
 ocr_letters|0.5|0.5|PACMAP|--sample-cap 125000 --batch-size 1250

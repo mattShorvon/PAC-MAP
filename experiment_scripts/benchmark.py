@@ -295,8 +295,8 @@ for dataset in datasets:
             except Exception as error:
                 print(f"HBP failed with error {error}")
                 print(f"Error type: {type(error).__name__}")
-                run_success = False
-                break 
+                # run_success = False
+                continue 
         if "PACMAP" in methods:
             start = time.perf_counter()
             pac_map_est, pac_map_prob = pac_map(
